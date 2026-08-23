@@ -5,14 +5,14 @@ journal = { identifiers = ["sshd", "sshd-session"], units = ["sshd.service", "ss
 prefilter = ["sshd"]
 ports = [22]
 patterns = [
-  '(?:sshd(?:-session)?\[\d+\]: )?Failed (?:password|publickey|keyboard-interactive/pam|none) for (?:invalid user )?<F-USER>\S+</F-USER> from <HOST>(?: port \d+)?(?: ssh\d*)?',
-  '(?:sshd(?:-session)?\[\d+\]: )?Invalid user <F-USER>\S*</F-USER> from <HOST>',
-  '(?:sshd(?:-session)?\[\d+\]: )?(?:error: )?maximum authentication attempts exceeded for (?:invalid user )?<F-USER>\S+</F-USER> from <HOST>',
+  '(?:sshd(?:-session)?\[\d+\]: )?Failed (?:password|publickey|keyboard-interactive/pam|none) for (?:invalid user )?<F-USER>.+</F-USER> from <HOST>(?: port \d+)?(?: ssh\d*)?(?:: \S+ \S+)?(?: \[preauth\])?$',
+  '(?:sshd(?:-session)?\[\d+\]: )?Invalid user <F-USER>.*</F-USER> from <HOST>(?: port \d+)?$',
+  '(?:sshd(?:-session)?\[\d+\]: )?(?:error: )?maximum authentication attempts exceeded for (?:invalid user )?<F-USER>.+</F-USER> from <HOST>(?: port \d+)?(?: ssh\d*)?(?: \[preauth\])?$',
   '(?:sshd(?:-session)?\[\d+\]: )?(?:error: )?Received disconnect from <HOST>(?: port \d+)?:\s*\d+: .*\[preauth\]',
-  '(?:sshd(?:-session)?\[\d+\]: )?Disconnected from (?:invalid|authenticating) user <F-USER>\S+</F-USER> <HOST>(?: port \d+)? \[preauth\]',
-  '(?:sshd(?:-session)?\[\d+\]: )?Connection closed by (?:invalid|authenticating) user <F-USER>\S+</F-USER> <HOST>(?: port \d+)? \[preauth\]',
+  '(?:sshd(?:-session)?\[\d+\]: )?Disconnected from (?:invalid|authenticating) user <F-USER>.+</F-USER> <HOST>(?: port \d+)? \[preauth\]$',
+  '(?:sshd(?:-session)?\[\d+\]: )?Connection closed by (?:invalid|authenticating) user <F-USER>.+</F-USER> <HOST>(?: port \d+)? \[preauth\]$',
   '(?:sshd(?:-session)?\[\d+\]: )?(?:error: )?(?:PAM: )?Authentication failure for .* from <HOST>',
-  '(?:sshd(?:-session)?\[\d+\]: )?User <F-USER>\S+</F-USER> from <HOST> not allowed because',
+  '(?:sshd(?:-session)?\[\d+\]: )?User <F-USER>.+</F-USER> from <HOST> not allowed because',
   '(?:sshd(?:-session)?\[\d+\]: )?(?:error: )?Bad protocol version identification .* from <HOST>',
   '(?:sshd(?:-session)?\[\d+\]: )?banner exchange: Connection from <HOST>(?: port \d+)?: invalid format',
   '(?:sshd(?:-session)?\[\d+\]: )?(?:error: )?kex_exchange_identification: .* <HOST>',
