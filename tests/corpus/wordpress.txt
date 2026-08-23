@@ -1,0 +1,6 @@
++ 198.51.100.7   198.51.100.7 - - [23/Aug/2026:00:00:01 +0000] "POST /wp-login.php HTTP/1.1" 200 4321 "-" "Mozilla/5.0"
++ 198.51.100.8   198.51.100.8 - - [23/Aug/2026:00:00:01 +0000] "POST /blog/wp-login.php?redirect_to=x HTTP/2.0" 200 4321 "https://example.com/wp-login.php" "Mozilla/5.0"
++ 2001:db8::8    2001:db8::8 - - [23/Aug/2026:00:00:01 +0000] "POST /xmlrpc.php HTTP/1.1" 200 400 "-" "Mozilla/5.0"
+- 198.51.100.7 - - [23/Aug/2026:00:00:01 +0000] "GET /wp-login.php HTTP/1.1" 200 4321 "-" "Mozilla/5.0"
+- 198.51.100.7 - - [23/Aug/2026:00:00:01 +0000] "POST /wp-login.php HTTP/1.1" 302 0 "-" "Mozilla/5.0"
+- 198.51.100.7 - - [23/Aug/2026:00:00:01 +0000] "POST /wp-admin/admin-ajax.php HTTP/1.1" 200 12 "-" "Mozilla/5.0"

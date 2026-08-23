@@ -1,0 +1,11 @@
+name = "proftpd"
+description = "ProFTPD login failures"
+files = ["/var/log/proftpd/proftpd.log", "/var/log/secure", "/var/log/auth.log"]
+journal = { identifiers = ["proftpd"] }
+prefilter = ["proftpd"]
+ports = [21]
+patterns = [
+  'proftpd\[\d+\]:? \S+ \(\S+\[<HOST>\]\)[: -]+ USER <F-USER>\S+</F-USER>(?: \(Login failed\))?: (?:Incorrect password|Password mismatch|no such user found)',
+  'proftpd\[\d+\]:? \S+ \(\S+\[<HOST>\]\)[: -]+ SECURITY VIOLATION: \S+ login attempted',
+  'proftpd\[\d+\]:? \S+ \(\S+\[<HOST>\]\)[: -]+ Maximum login attempts \(\d+\) exceeded',
+]

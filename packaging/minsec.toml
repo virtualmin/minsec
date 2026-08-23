@@ -1,0 +1,21 @@
+# minsec configuration. Drop-ins in /etc/minsec/conf.d/*.toml override this
+# file; custom filters go in /etc/minsec/filters/<name>.toml.
+#
+# Enable filters with `minsec enable <name>`; list them with `minsec filters`.
+
+[defaults]
+bantime  = "1h"       # initial ban length
+findtime = "10m"      # window in which maxretry failures trigger a ban
+maxretry = 5
+backend  = "nft"      # nft | null (log only) | exec
+# Repeat offenders get longer bans: bantime * factor^previous_bans, capped.
+escalate = { factor = 2, max = "1w", memory = "30d" }
+# Never ban these. Loopback and this host's own addresses are always allowed.
+allow = []
+# IPv6 attackers are tracked and banned per /64.
+ipv6_prefix = 64
+# Prefer journald for filters that declare journal selectors.
+journal = true
+
+[filters.sshd]
+enabled = true

@@ -1,0 +1,6 @@
++ 198.51.100.7   [Sat Aug 23 00:00:01.123456 2026] [auth_basic:error] [pid 123] [client 198.51.100.7:5555] AH01617: user bob: authentication failure for "/admin": Password Mismatch
++ 198.51.100.8   [Sat Aug 23 00:00:01.123456 2026] [auth_basic:error] [pid 123] [client 198.51.100.8:5555] AH01618: user nobody not found: /admin
++ 198.51.100.9   [Sat Aug 23 00:00:01.123456 2026] [authz_core:error] [pid 123] [client 198.51.100.9:5555] AH01630: client denied by server configuration: /var/www/html/.git
++ 2001:db8::4    [Sat Aug 23 00:00:01 2026] [error] [client 2001:db8::4] user bob: password mismatch: /admin
+- [Sat Aug 23 00:00:01.123456 2026] [core:notice] [pid 123] AH00094: Command line: '/usr/sbin/httpd -D FOREGROUND'
+- [Sat Aug 23 00:00:01.123456 2026] [php:error] [pid 123] [client 198.51.100.7:5555] PHP Fatal error: something

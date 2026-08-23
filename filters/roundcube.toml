@@ -1,0 +1,10 @@
+name = "roundcube"
+description = "Roundcube webmail login failures"
+files = ["/var/log/roundcube/errors.log", "/var/log/roundcube/errors", "/var/log/roundcubemail/errors.log", "/var/log/roundcubemail/errors"]
+prefilter = ["Login failed", "Failed login", "FAILED login"]
+ports = [80, 443]
+patterns = [
+  'IMAP Error: (?:FAILED login|Login failed) for <F-USER>\S+</F-USER> (?:against \S+ )?from <HOST>',
+  'Failed login for <F-USER>\S+</F-USER> from <HOST> in session',
+  'Login failed for <F-USER>\S+</F-USER> from <HOST>(?:\(X-Forwarded-For: [^)]*\))?\.',
+]

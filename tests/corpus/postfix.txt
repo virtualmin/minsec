@@ -1,0 +1,11 @@
++ 198.51.100.7   Aug 23 00:00:01 host postfix/smtpd[123]: NOQUEUE: reject: RCPT from unknown[198.51.100.7]: 554 5.7.1 <spam@example.com>: Relay access denied; from=<a@b> to=<c@d> proto=ESMTP helo=<x>
++ 198.51.100.8   Aug 23 00:00:01 host postfix/smtpd[123]: NOQUEUE: reject: RCPT from unknown[198.51.100.8]: 450 4.7.1 <x>: Helo command rejected: Host not found; from=<a@b> to=<c@d> proto=ESMTP helo=<x>
++ 198.51.100.9   Aug 23 00:00:01 host postfix/smtpd[123]: NOQUEUE: reject: RCPT from unknown[198.51.100.9]: 550 5.1.1 <nobody@example.com>: Recipient address rejected: User unknown in virtual mailbox table; from=<a@b> to=<c@d>
++ 198.51.100.10  Aug 23 00:00:01 host postfix/smtpd[123]: improper command pipelining after CONNECT from unknown[198.51.100.10]: EHLO
++ 198.51.100.11  Aug 23 00:00:01 host postfix/smtpd[123]: lost connection after AUTH from unknown[198.51.100.11]
++ 198.51.100.12  Aug 23 00:00:01 host postfix/smtpd[123]: too many errors after RCPT from unknown[198.51.100.12]
++ 198.51.100.13  Aug 23 00:00:01 host postfix/postscreen[123]: PREGREET 11 after 0.1 from [198.51.100.13]:1234: EHLO x\r\n
++ 198.51.100.14  Aug 23 00:00:01 host postfix/postscreen[123]: DNSBL rank 3 for [198.51.100.14]:1234
+- Aug 23 00:00:01 host postfix/smtpd[123]: connect from unknown[198.51.100.7]
+- Aug 23 00:00:01 host postfix/smtpd[123]: lost connection after DATA from mail.example[198.51.100.7]
+- Aug 23 00:00:01 host postfix/postscreen[123]: PASS NEW [198.51.100.7]:1234

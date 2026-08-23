@@ -1,0 +1,15 @@
+name = "postfix"
+description = "Postfix SMTP rejects, relay attempts and protocol abuse"
+files = ["/var/log/maillog", "/var/log/mail.log"]
+journal = { identifiers = ["postfix/smtpd", "postfix/smtps/smtpd", "postfix/submission/smtpd", "postfix/postscreen"] }
+prefilter = ["postfix/"]
+ports = [25, 465, 587]
+patterns = [
+  'postfix(?:/\S+)?/smtpd\[\d+\]: NOQUEUE: reject: RCPT from \S+\[<HOST>\]: 4(?:50|54) 4\.7\.1 ',
+  'postfix(?:/\S+)?/smtpd\[\d+\]: NOQUEUE: reject: RCPT from \S+\[<HOST>\]: 5(?:04|50|54) 5\.(?:1\.[018]|4\.6|5\.1|7\.1) ',
+  'postfix(?:/\S+)?/smtpd\[\d+\]: NOQUEUE: reject: (?:EHLO|HELO|RCPT|DATA) from \S+\[<HOST>\]: 554 5\.7\.1 ',
+  'postfix(?:/\S+)?/smtpd\[\d+\]: improper command pipelining after \S+ from \S+\[<HOST>\]',
+  'postfix(?:/\S+)?/smtpd\[\d+\]: lost connection after (?:AUTH|EHLO|HELO|STARTTLS|CONNECT) from \S+\[<HOST>\]',
+  'postfix(?:/\S+)?/smtpd\[\d+\]: too many errors after \S+ from \S+\[<HOST>\]',
+  'postfix/postscreen\[\d+\]: (?:PREGREET|HANGUP|COMMAND (?:TIME|COUNT|LENGTH) LIMIT|DNSBL rank \d+) .*\[<HOST>\]',
+]

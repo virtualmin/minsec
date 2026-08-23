@@ -1,0 +1,28 @@
+[package]
+name = "minsec-core"
+description = "Core library for minsec: log sources, filters, tracker, policy, firewall backends"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+regex.workspace = true
+aho-corasick.workspace = true
+memchr.workspace = true
+ipnet.workspace = true
+tokio.workspace = true
+inotify.workspace = true
+tracing.workspace = true
+glob.workspace = true
+libc.workspace = true
+futures-core.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros", "time"] }

@@ -1,0 +1,5 @@
++ 198.51.100.7   Aug 23 00:00:01 host proftpd[123]: host.example (198.51.100.7[198.51.100.7]) - USER bob (Login failed): Incorrect password
++ 198.51.100.8   Aug 23 00:00:01 host proftpd[123] host.example (unknown[198.51.100.8]): USER root: no such user found from unknown [198.51.100.8] to 10.0.0.1:21
++ 198.51.100.9   Aug 23 00:00:01 host proftpd[123]: host.example (198.51.100.9[198.51.100.9]) - SECURITY VIOLATION: Root login attempted
++ 198.51.100.10  Aug 23 00:00:01 host proftpd[123]: host.example (198.51.100.10[198.51.100.10]) - Maximum login attempts (3) exceeded
+- Aug 23 00:00:01 host proftpd[123]: host.example (198.51.100.7[198.51.100.7]) - USER bob: Login successful.

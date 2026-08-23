@@ -1,0 +1,4 @@
++ 198.51.100.7   Aug 23 00:00:01 host webmin[123]: Invalid login as root from 198.51.100.7
++ 198.51.100.8   [23/Aug/2026:00:00:01 +0000] [198.51.100.8] Non-existent login as admin from 198.51.100.8
++ 198.51.100.9   Aug 23 00:00:01 host webmin[123]: Security alert: Host 198.51.100.9 attempted to login as root with an invalid session
+- Aug 23 00:00:01 host webmin[123]: Successful login as root from 198.51.100.7

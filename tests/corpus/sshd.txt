@@ -1,0 +1,26 @@
++ 198.51.100.7   Aug 23 00:00:01 host sshd[123]: Failed password for invalid user admin from 198.51.100.7 port 5555 ssh2
++ 198.51.100.8   Aug 23 00:00:01 host sshd[123]: Failed password for root from 198.51.100.8 port 5555 ssh2
++ 198.51.100.9   Aug 23 00:00:01 host sshd-session[123]: Failed password for root from 198.51.100.9 port 5555 ssh2
++ 2001:db8::5    Aug 23 00:00:01 host sshd[123]: Failed publickey for git from 2001:db8::5 port 40000 ssh2: RSA SHA256:abc
++ 198.51.100.10  Aug 23 00:00:01 host sshd[123]: Invalid user oracle from 198.51.100.10 port 41234
++ 198.51.100.11  sshd[9]: Invalid user  from 198.51.100.11 port 41234
++ 198.51.100.12  Aug 23 00:00:01 host sshd[123]: error: maximum authentication attempts exceeded for root from 198.51.100.12 port 1 ssh2 [preauth]
++ 198.51.100.13  Aug 23 00:00:01 host sshd[123]: Received disconnect from 198.51.100.13 port 1: 11: Bye Bye [preauth]
++ 198.51.100.14  Aug 23 00:00:01 host sshd[123]: Disconnected from invalid user test 198.51.100.14 port 1 [preauth]
++ 198.51.100.15  Aug 23 00:00:01 host sshd[123]: Connection closed by authenticating user root 198.51.100.15 port 1 [preauth]
++ 198.51.100.16  Aug 23 00:00:01 host sshd[123]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.16  user=root
++ 198.51.100.17  Aug 23 00:00:01 host sshd[123]: User nobody from 198.51.100.17 not allowed because not listed in AllowUsers
++ 198.51.100.18  Aug 23 00:00:01 host sshd[123]: Bad protocol version identification 'GET / HTTP/1.1' from 198.51.100.18 port 1
++ 198.51.100.19  Aug 23 00:00:01 host sshd[123]: banner exchange: Connection from 198.51.100.19 port 1: invalid format
++ 198.51.100.20  Aug 23 00:00:01 host sshd[123]: error: kex_exchange_identification: Connection closed by remote host; Connection from 198.51.100.20 port 1
++ 198.51.100.21  Aug 23 00:00:01 host sshd[123]: Unable to negotiate with 198.51.100.21 port 1: no matching host key type found. Their offer: ssh-rsa [preauth]
++ 10.0.0.9       sshd[5]: Failed password for root from ::ffff:10.0.0.9 port 1 ssh2
+- Aug 23 00:00:01 host sshd[123]: Accepted password for joe from 198.51.100.50 port 5555 ssh2
+- Aug 23 00:00:01 host sshd[123]: Accepted publickey for joe from 198.51.100.50 port 5555 ssh2: ED25519 SHA256:xyz
+- Aug 23 00:00:01 host sshd[123]: Disconnected from user joe 198.51.100.50 port 5555
+- Aug 23 00:00:01 host sshd[123]: Connection closed by 198.51.100.50 port 5555 [preauth]
+- Aug 23 00:00:01 host sshd[123]: Received disconnect from 198.51.100.50 port 5555:11: disconnected by user
+- Aug 23 00:00:01 host sshd[123]: pam_unix(sshd:session): session opened for user joe by (uid=0)
+# journald form (no syslog prefix); the prefilter is bypassed for journal lines,
+# but patterns must still match without the `sshd[pid]:` prefix.
++ 198.51.100.30  sshd Failed password for root from 198.51.100.30 port 1 ssh2

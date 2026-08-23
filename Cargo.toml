@@ -1,0 +1,37 @@
+[workspace]
+resolver = "2"
+members = ["crates/minsec-core", "crates/minsec"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/virtualmin/minsec"
+
+[workspace.dependencies]
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+regex = { version = "1", default-features = false, features = ["std", "perf", "unicode-perl"] }
+aho-corasick = "1"
+memchr = "2"
+ipnet = { version = "2", features = ["serde"] }
+tokio = { version = "1", default-features = false, features = ["rt", "net", "time", "signal", "io-util", "sync", "macros", "fs", "process"] }
+inotify = { version = "0.11", default-features = false, features = ["stream"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "env-filter", "ansi"] }
+clap = { version = "4", features = ["derive"] }
+glob = "0.3"
+libc = "0.2"
+futures-core = "0.3"
+
+[profile.release]
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false

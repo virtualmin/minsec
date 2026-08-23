@@ -1,0 +1,8 @@
++ 198.51.100.7   Aug 23 00:00:01 host dovecot[123]: imap-login: Disconnected: Connection closed (auth failed, 3 attempts in 10 secs): user=<bob>, method=PLAIN, rip=198.51.100.7, lip=10.0.0.1, TLS, session=<abc>
++ 198.51.100.8   Aug 23 00:00:01 host dovecot[123]: pop3-login: Aborted login (auth failed, 1 attempts in 2 secs): user=<x>, method=PLAIN, rip=198.51.100.8, lip=10.0.0.1, session=<abc>
++ 198.51.100.9   Aug 23 00:00:01 host dovecot[123]: imap-login: Disconnected (no auth attempts in 0 secs): user=<>, rip=198.51.100.9, lip=10.0.0.1, session=<abc>
++ 198.51.100.10  Aug 23 00:00:01 host dovecot[123]: auth-worker(456): pam(bob@example.com,198.51.100.10,<abc>): unknown user
++ 198.51.100.11  Aug 23 00:00:01 host dovecot[123]: auth: passwd-file(bob,198.51.100.11): Password mismatch
++ 2001:db8::7    dovecot: managesieve-login: Disconnected: Too many invalid commands (no auth attempts in 1 secs): user=<>, rip=2001:db8::7, lip=2001:db8::1
+- Aug 23 00:00:01 host dovecot[123]: imap-login: Login: user=<bob>, method=PLAIN, rip=198.51.100.7, lip=10.0.0.1, TLS, session=<abc>
+- Aug 23 00:00:01 host dovecot[123]: imap(bob)<123><abc>: Logged out in=1 out=2

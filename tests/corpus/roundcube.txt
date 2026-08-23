@@ -1,0 +1,4 @@
++ 198.51.100.7   [23-Aug-2026 00:00:01 +0000]: <abc> IMAP Error: Login failed for bob against localhost from 198.51.100.7. AUTHENTICATE PLAIN: Authentication failed. in /usr/share/roundcubemail/program/lib/Roundcube/rcube_imap.php on line 200 (POST /?_task=login&_action=login)
++ 198.51.100.8   [23-Aug-2026 00:00:01 +0000]: <abc> Failed login for bob from 198.51.100.8 in session abc (error: 401)
++ 198.51.100.9   [23-Aug-2026 00:00:01 +0000]: <abc> Login failed for bob from 198.51.100.9(X-Forwarded-For: 10.0.0.1). Authentication failed.
+- [23-Aug-2026 00:00:01 +0000]: <abc> Successful login for bob (ID: 1) from 198.51.100.7 in session abc

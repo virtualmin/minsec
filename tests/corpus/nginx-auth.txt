@@ -1,0 +1,4 @@
++ 198.51.100.7   2026/08/23 00:00:01 [error] 123#123: *1 user "bob": password mismatch, client: 198.51.100.7, server: example.com, request: "GET /admin HTTP/1.1", host: "example.com"
++ 198.51.100.8   2026/08/23 00:00:01 [error] 123#123: *1 user "nobody" was not found in "/etc/nginx/.htpasswd", client: 198.51.100.8, server: example.com, request: "GET /admin HTTP/1.1"
++ 198.51.100.9   2026/08/23 00:00:01 [error] 123#123: *1 no user/password was provided for basic authentication, client: 198.51.100.9, server: example.com, request: "GET /admin HTTP/1.1"
+- 2026/08/23 00:00:01 [error] 123#123: *1 open() "/var/www/x" failed (2: No such file or directory), client: 198.51.100.7, server: example.com

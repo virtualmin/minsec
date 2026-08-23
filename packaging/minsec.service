@@ -1,0 +1,51 @@
+[Unit]
+Description=minsec - minimalist security daemon
+Documentation=https://github.com/virtualmin/minsec
+After=network-online.target nftables.service firewalld.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/minsec daemon
+Restart=on-failure
+RestartSec=2s
+
+# Run unprivileged: CAP_NET_ADMIN for nftables, group membership for logs.
+User=minsec
+Group=minsec
+SupplementaryGroups=adm systemd-journal
+AmbientCapabilities=CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_NET_ADMIN
+NoNewPrivileges=true
+RuntimeDirectory=minsec
+RuntimeDirectoryMode=0750
+StateDirectory=minsec
+StateDirectoryMode=0750
+ConfigurationDirectory=minsec
+
+# Hardening
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
+ReadOnlyPaths=/var/log
+Environment=MALLOC_ARENA_MAX=1
+MemoryMax=64M
+
+[Install]
+WantedBy=multi-user.target

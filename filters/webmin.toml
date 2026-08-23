@@ -1,0 +1,11 @@
+name = "webmin"
+description = "Webmin, Usermin and Virtualmin (miniserv) login failures"
+files = ["/var/webmin/miniserv.error", "/var/usermin/miniserv.error", "/var/log/secure", "/var/log/auth.log"]
+journal = { identifiers = ["webmin", "usermin"] }
+prefilter = ["Invalid login", "Non-existent login", "Security alert"]
+ports = [10000, 20000]
+patterns = [
+  'Invalid login as <F-USER>\S+</F-USER> from <HOST>',
+  'Non-existent login as <F-USER>\S+</F-USER> from <HOST>',
+  'Security alert: Host <HOST> attempted to login as <F-USER>\S+</F-USER> with',
+]

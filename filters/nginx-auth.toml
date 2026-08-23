@@ -1,0 +1,9 @@
+name = "nginx-auth"
+description = "nginx basic-auth failures"
+files = ["/var/log/nginx/error.log", "/var/log/virtualmin/*_error_log"]
+prefilter = ["client: "]
+ports = [80, 443]
+patterns = [
+  'user "<F-USER>[^"]*</F-USER>"(?::\s*password mismatch| was not found in ".*?")?, client: <HOST>, server: ',
+  'no user/password was provided for basic authentication, client: <HOST>, server: ',
+]

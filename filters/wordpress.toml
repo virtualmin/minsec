@@ -1,0 +1,9 @@
+name = "wordpress"
+description = "WordPress login and XML-RPC brute force (from web server access logs)"
+files = ["/var/log/virtualmin/*_access_log", "/var/log/httpd/access_log", "/var/log/apache2/access.log", "/var/log/nginx/access.log"]
+prefilter = ["wp-login.php", "xmlrpc.php"]
+ports = [80, 443]
+patterns = [
+  '^<HOST> \S+ \S+ \[[^\]]+\] "POST /(?:[^ "]*/)?wp-login\.php(?:\?[^ "]*)? HTTP/[0-9.]+" (?:200|401|403|503) ',
+  '^<HOST> \S+ \S+ \[[^\]]+\] "POST /(?:[^ "]*/)?xmlrpc\.php(?:\?[^ "]*)? HTTP/[0-9.]+" (?:200|401|403|405|503) ',
+]

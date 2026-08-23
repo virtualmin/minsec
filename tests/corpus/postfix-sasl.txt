@@ -1,0 +1,5 @@
++ 198.51.100.7   Aug 23 00:00:01 host postfix/smtpd[123]: warning: unknown[198.51.100.7]: SASL LOGIN authentication failed: UGFzc3dvcmQ6
++ 198.51.100.8   Aug 23 00:00:01 host postfix/submission/smtpd[123]: warning: mail.example[198.51.100.8]: SASL PLAIN authentication failed: authentication failure
++ 2001:db8::9    postfix/smtps/smtpd[123]: warning: unknown[2001:db8::9]: SASL PLAIN authentication failed
+- Aug 23 00:00:01 host postfix/smtpd[123]: connect from unknown[198.51.100.7]
+- Aug 23 00:00:01 host postfix/smtpd[123]: warning: unknown[198.51.100.7]: SASL LOGIN authentication succeeded

@@ -1,0 +1,10 @@
+name = "apache-auth"
+description = "Apache HTTP authentication failures"
+files = ["/var/log/httpd/error_log", "/var/log/apache2/error.log", "/var/log/virtualmin/*_error_log"]
+prefilter = ["[client "]
+ports = [80, 443]
+patterns = [
+  '\[client <HOST>(?::\d+)?\] (?:AH01617|AH01618|AH01797|AH01630|AH01631|AH01627): ',
+  '\[client <HOST>(?::\d+)?\] user <F-USER>\S+</F-USER>(?: not found|: authentication failure|: password mismatch)',
+  '\[client <HOST>(?::\d+)?\] client denied by server configuration',
+]

@@ -1,0 +1,9 @@
+name = "postfix-sasl"
+description = "Postfix SASL (submission) authentication failures"
+files = ["/var/log/maillog", "/var/log/mail.log"]
+journal = { identifiers = ["postfix/smtpd", "postfix/smtps/smtpd", "postfix/submission/smtpd"] }
+prefilter = ["SASL"]
+ports = [25, 465, 587]
+patterns = [
+  'postfix(?:/\S+)?/smtpd\[\d+\]: warning: \S+\[<HOST>\]: SASL (?:LOGIN|PLAIN|(?:CRAM|DIGEST)-MD5|NTLM|XOAUTH2|OAUTHBEARER) authentication failed',
+]
