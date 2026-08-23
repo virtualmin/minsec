@@ -144,3 +144,16 @@ cargo run --release -p minsec-core --example regex_mem   # heap cost per filter
 ## License
 
 GPL-3.0-or-later.
+
+### Cutting a release
+
+Versions live in `Cargo.toml` (`[workspace.package] version`) and are the
+source of truth; a tag must match it or the release workflow fails.
+
+```sh
+scripts/release.sh 0.1.1        # bump, commit "Release v0.1.1", tag v0.1.1, push
+```
+
+The tag push triggers `.github/workflows/release.yml`, which builds the
+glibc-2.28 packages for x86_64 and aarch64, smoke-installs them, and attaches
+them to the GitHub release.
