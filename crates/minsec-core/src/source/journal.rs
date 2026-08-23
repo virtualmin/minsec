@@ -50,6 +50,9 @@ mod native {
 
     const SD_JOURNAL_LOCAL_ONLY: c_int = 1 << 0;
     const SD_JOURNAL_INVALIDATE: c_int = 2;
+    /// Entries per `drain` before handing the batch to the channel, so a
+    /// journal burst is not materialised as one unbounded `Vec<Line>`.
+    const MAX_BATCH: usize = 4096;
 
     type SdJournal = c_void;
 
@@ -155,31 +158,38 @@ mod native {
             Some(String::from_utf8_lossy(&bytes[eq + 1..]).into_owned())
         }
 
-        /// Drain all new entries into `out`. Returns false if the journal
-        /// reported invalidation (files rotated) — callers just keep going;
-        /// the cursor remains valid.
-        fn drain(&self, out: &mut Vec<Line>) -> anyhow::Result<()> {
+        /// Drain up to `MAX_BATCH` new entries into `out`. Returns true if
+        /// the batch filled up and more entries may be pending, so the caller
+        /// should flush and drain again without waiting on the fd. Journal
+        /// invalidation (files rotated) is just logged; the cursor stays valid.
+        fn drain(&self, out: &mut Vec<Line>) -> anyhow::Result<bool> {
             let ev = unsafe { (self.api.process)(self.j) };
             check(ev, "sd_journal_process")?;
             if ev == SD_JOURNAL_INVALIDATE {
                 tracing::debug!("journal files changed");
             }
+            let mut n = 0;
             loop {
+                if n >= MAX_BATCH {
+                    return Ok(true);
+                }
                 let rc = check(unsafe { (self.api.next)(self.j) }, "sd_journal_next")?;
                 if rc == 0 {
                     break;
                 }
+                n += 1;
                 let Some(text) = self.get("MESSAGE\0") else { continue };
                 out.push(Line {
                     origin: Origin::Journal {
                         unit: self.get("_SYSTEMD_UNIT\0").map(Arc::from),
                         identifier: self.get("SYSLOG_IDENTIFIER\0").map(Arc::from),
                         comm: self.get("_COMM\0").map(Arc::from),
+                        uid: self.get("_UID\0").and_then(|u| u.parse().ok()),
                     },
                     text,
                 });
             }
-            Ok(())
+            Ok(false)
         }
     }
 
@@ -202,16 +212,18 @@ mod native {
         let afd = AsyncFd::with_interest(fd, interest)?;
         let mut out = Vec::new();
         // Entries written between open and now.
-        j.drain(&mut out)?;
+        let mut more = j.drain(&mut out)?;
         loop {
             for l in out.drain(..) {
                 if tx.send(l).await.is_err() {
                     return Ok(());
                 }
             }
-            let mut guard = afd.readable().await?;
-            guard.clear_ready();
-            j.drain(&mut out)?;
+            if !more {
+                let mut guard = afd.readable().await?;
+                guard.clear_ready();
+            }
+            more = j.drain(&mut out)?;
         }
     }
 }
@@ -277,6 +289,7 @@ mod subprocess {
                 unit: field(&v, "_SYSTEMD_UNIT"),
                 identifier: field(&v, "SYSLOG_IDENTIFIER"),
                 comm: field(&v, "_COMM"),
+                uid: v.get("_UID").and_then(|x| x.as_str()).and_then(|u| u.parse().ok()),
             },
             text,
         })
@@ -289,14 +302,17 @@ mod tests {
     #[test]
     fn parses_json_entry() {
         let l = subprocess::parse_entry(
-            r#"{"MESSAGE":"Failed password for root from 1.2.3.4","SYSLOG_IDENTIFIER":"sshd","_SYSTEMD_UNIT":"sshd.service"}"#,
+            r#"{"MESSAGE":"Failed password for root from 1.2.3.4","SYSLOG_IDENTIFIER":"sshd","_SYSTEMD_UNIT":"sshd.service","_UID":"0"}"#,
         )
         .unwrap();
         assert_eq!(l.text, "Failed password for root from 1.2.3.4");
         match l.origin {
-            Origin::Journal { unit, identifier, .. } => {
+            Origin::Journal {
+                unit, identifier, uid, ..
+            } => {
                 assert_eq!(unit.as_deref(), Some("sshd.service"));
                 assert_eq!(identifier.as_deref(), Some("sshd"));
+                assert_eq!(uid, Some(0));
             }
             _ => panic!(),
         }

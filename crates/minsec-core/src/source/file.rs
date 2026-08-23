@@ -21,6 +21,12 @@ use tokio::sync::mpsc;
 
 const READ_CHUNK: usize = 64 * 1024;
 const MAX_LINE: usize = 16 * 1024;
+/// Most bytes one `read_available` call consumes before handing what it has
+/// to the channel. Without a budget a burst (or a large backlog on an inode we
+/// are draining) would be materialised as one unbounded `Vec<Line>` before
+/// backpressure applies. Files with more pending are re-polled immediately
+/// after the flush.
+const MAX_BATCH_BYTES: usize = 1024 * 1024;
 const POLL_INTERVAL: Duration = Duration::from_secs(2);
 
 struct FileState {
@@ -53,6 +59,8 @@ pub struct FileTailer {
     tx: mpsc::Sender<Line>,
     /// Start reading from the end of existing files (true) or the start.
     seek_end: bool,
+    /// Set when a poll stopped at `MAX_BATCH_BYTES` with data still unread.
+    backlog: bool,
 }
 
 impl FileTailer {
@@ -69,6 +77,7 @@ impl FileTailer {
             files: HashMap::new(),
             tx,
             seek_end,
+            backlog: false,
         };
         for p in patterns {
             t.add_pattern(&p)?;
@@ -142,7 +151,7 @@ impl FileTailer {
                 if st.file.is_some() {
                     tracing::debug!(path = %path.display(), "file gone; waiting for it to reappear");
                     // Drain what remains of the old inode first.
-                    Self::read_available(st, path, out);
+                    while Self::read_available(st, path, out) {}
                 }
                 st.file = None;
                 st.pos = 0;
@@ -153,7 +162,7 @@ impl FileTailer {
         let rotated = st.file.is_some() && (meta.ino() != st.ino || meta.size() < st.pos);
         if rotated {
             tracing::debug!(path = %path.display(), "rotation detected");
-            Self::read_available(st, path, out);
+            while Self::read_available(st, path, out) {}
             st.file = None;
             st.partial.clear();
         }
@@ -175,21 +184,31 @@ impl FileTailer {
                 }
             }
         }
-        Self::read_available(st, path, out);
+        if Self::read_available(st, path, out) {
+            self.backlog = true;
+        }
     }
 
-    fn read_available(st: &mut FileState, path: &Path, out: &mut Vec<Line>) {
-        let Some(f) = st.file.as_mut() else { return };
+    /// Read up to `MAX_BATCH_BYTES` of new data into `out`. Returns true if
+    /// the budget was exhausted and more may be pending.
+    fn read_available(st: &mut FileState, path: &Path, out: &mut Vec<Line>) -> bool {
+        let Some(f) = st.file.as_mut() else { return false };
         let mut buf = vec![0u8; READ_CHUNK];
+        let mut budget = MAX_BATCH_BYTES;
         loop {
-            let n = match f.read(&mut buf) {
-                Ok(0) => break,
+            if budget == 0 {
+                return true;
+            }
+            let want = budget.min(READ_CHUNK);
+            let n = match f.read(&mut buf[..want]) {
+                Ok(0) => return false,
                 Ok(n) => n,
                 Err(e) => {
                     tracing::warn!(path = %path.display(), "read error: {e}");
-                    break;
+                    return false;
                 }
             };
+            budget -= n;
             st.pos += n as u64;
             let mut chunk = &buf[..n];
             while let Some(nl) = memchr::memchr(b'\n', chunk) {
@@ -228,6 +247,13 @@ impl FileTailer {
         let mut tick = tokio::time::interval(POLL_INTERVAL);
         tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
         loop {
+            if std::mem::take(&mut self.backlog) {
+                // A previous poll stopped at its byte budget; finish the
+                // backlog before waiting for new events.
+                self.poll_all(&mut out);
+                self.flush(&mut out).await?;
+                continue;
+            }
             tokio::select! {
                 ev = poll_fn(|cx| std::pin::Pin::new(&mut stream).poll_next(cx)) => {
                     let Some(ev) = ev else { anyhow::bail!("inotify stream ended") };
@@ -266,6 +292,44 @@ mod tests {
     use super::*;
     use std::io::Write;
 
+    /// A backlog larger than `MAX_BATCH_BYTES` is delivered in full, in order,
+    /// through a small channel: the tailer must come back for the remainder
+    /// on its own rather than waiting for another inotify event.
+    #[test]
+    fn large_backlog_is_delivered_in_bounded_batches() {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let local = tokio::task::LocalSet::new();
+        local.block_on(&rt, async {
+            let dir = tempdir("backlog");
+            let log = dir.join("big.log");
+            std::fs::write(&log, "").unwrap();
+            let (tx, mut rx) = mpsc::channel(16);
+            let tailer = FileTailer::new([log.to_string_lossy().into_owned()], tx, true).unwrap();
+            tokio::task::spawn_local(tailer.run());
+            tokio::time::sleep(Duration::from_millis(50)).await;
+
+            // ~3 MiB in one burst: well over MAX_BATCH_BYTES.
+            let total = 30_000;
+            {
+                let mut f = std::io::BufWriter::new(std::fs::OpenOptions::new().append(true).open(&log).unwrap());
+                for i in 0..total {
+                    writeln!(f, "line {i:06} {}", "x".repeat(90)).unwrap();
+                }
+            }
+            for i in 0..total {
+                let l = tokio::time::timeout(Duration::from_secs(10), rx.recv())
+                    .await
+                    .expect("timed out waiting for backlog")
+                    .unwrap();
+                assert!(l.text.starts_with(&format!("line {i:06} ")), "got {:?}", &l.text[..12]);
+            }
+            let _ = std::fs::remove_dir_all(&dir);
+        });
+    }
+
     #[test]
     fn follows_appends_and_rotation_localset() {
         let rt = tokio::runtime::Builder::new_current_thread()
@@ -274,7 +338,7 @@ mod tests {
             .unwrap();
         let local = tokio::task::LocalSet::new();
         local.block_on(&rt, async {
-            let dir = tempdir();
+            let dir = tempdir("rotate");
             let log = dir.join("test.log");
             std::fs::write(&log, "old line\n").unwrap();
             let (tx, mut rx) = mpsc::channel(64);
@@ -324,11 +388,11 @@ mod tests {
         });
     }
 
-    fn tempdir() -> PathBuf {
+    fn tempdir(tag: &str) -> PathBuf {
         let base = std::env::var("CARGO_TARGET_TMPDIR")
             .map(PathBuf::from)
             .unwrap_or_else(|_| std::env::temp_dir());
-        let d = base.join(format!("minsec-tail-{}", std::process::id()));
+        let d = base.join(format!("minsec-tail-{tag}-{}", std::process::id()));
         std::fs::remove_dir_all(&d).ok();
         std::fs::create_dir_all(&d).unwrap();
         d

@@ -24,3 +24,13 @@
 # journald form (no syslog prefix); the prefilter is bypassed for journal lines,
 # but patterns must still match without the `sshd[pid]:` prefix.
 + 198.51.100.30  sshd Failed password for root from 198.51.100.30 port 1 ssh2
+# Forged usernames: the client-chosen identity contains " from <victim-ip>".
+# The real source is always the trailing address; the forged one must never win.
++ 198.51.100.40  Aug 23 00:00:01 host sshd[123]: Failed password for invalid user alice from 203.0.113.55 from 198.51.100.40 port 4242 ssh2
++ 198.51.100.41  Aug 23 00:00:01 host sshd[123]: Failed password for alice from 203.0.113.55 port 1 ssh2 from 198.51.100.41 port 4242 ssh2
++ 198.51.100.42  Aug 23 00:00:01 host sshd[123]: Failed publickey for bob from 203.0.113.55 port 1 ssh2: RSA SHA256:x from 198.51.100.42 port 4242 ssh2: RSA SHA256:abc
++ 198.51.100.43  Aug 23 00:00:01 host sshd[123]: Invalid user alice from 203.0.113.55 from 198.51.100.43 port 41234
++ 198.51.100.44  Aug 23 00:00:01 host sshd[123]: error: maximum authentication attempts exceeded for invalid user alice from 203.0.113.55 port 1 ssh2 [preauth] from 198.51.100.44 port 1 ssh2 [preauth]
++ 198.51.100.45  Aug 23 00:00:01 host sshd[123]: Disconnected from invalid user alice 203.0.113.55 port 1 [preauth] 198.51.100.45 port 1 [preauth]
++ 198.51.100.46  Aug 23 00:00:01 host sshd[123]: Connection closed by invalid user alice 203.0.113.55 port 1 [preauth] 198.51.100.46 port 1 [preauth]
++ 198.51.100.47  Aug 23 00:00:01 host sshd[123]: User alice from 203.0.113.55 not allowed because from 198.51.100.47 not allowed because not listed in AllowUsers

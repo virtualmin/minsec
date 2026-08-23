@@ -6,3 +6,5 @@
 + 2001:db8::7    dovecot: managesieve-login: Disconnected: Too many invalid commands (no auth attempts in 1 secs): user=<>, rip=2001:db8::7, lip=2001:db8::1
 - Aug 23 00:00:01 host dovecot[123]: imap-login: Login: user=<bob>, method=PLAIN, rip=198.51.100.7, lip=10.0.0.1, TLS, session=<abc>
 - Aug 23 00:00:01 host dovecot[123]: imap(bob)<123><abc>: Logged out in=1 out=2
+# Forged username containing ",<victim-ip>): unknown user"; the trailing address is the real source.
++ 198.51.100.40  Aug 23 00:00:01 host dovecot[123]: auth-worker(456): pam(alice,203.0.113.55): unknown user,198.51.100.40,<abc>): unknown user

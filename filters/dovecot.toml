@@ -8,5 +8,5 @@ patterns = [
   'dovecot(?:\[\d+\])?: (?:imap|pop3|managesieve|submission)-login: (?:Disconnected|Aborted login|Maximum number of connections).*\(auth failed, \d+ attempts(?: in \d+ secs)?\):.*rip=<HOST>',
   'dovecot(?:\[\d+\])?: (?:imap|pop3|managesieve|submission)-login: Disconnected \(no auth attempts in \d+ secs\):.*rip=<HOST>',
   'dovecot(?:\[\d+\])?: (?:imap|pop3|managesieve|submission)-login: Disconnected: Too many invalid commands.*rip=<HOST>',
-  'dovecot(?:\[\d+\])?: auth(?:-worker)?(?:\(\d+\))?: (?:pam|passwd-file|sql|ldap)\(<F-USER>[^,]+</F-USER>,<HOST>(?:,\S*)?\): (?:unknown user|Password mismatch|pam_authenticate\(\) failed)',
+  'dovecot(?:\[\d+\])?: auth(?:-worker)?(?:\(\d+\))?: (?:pam|passwd-file|sql|ldap)\(<F-USER>.+</F-USER>,<HOST>(?:,\S*)?\): (?:unknown user|Password mismatch|pam_authenticate\(\) failed)',
 ]
