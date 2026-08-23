@@ -13,7 +13,7 @@ use std::path::PathBuf;
 #[command(
     name = "minsec",
     version,
-    about = "Minimalist security daemon: a tiny fail2ban replacement"
+    about = "Minimalist security daemon: a tiny, fast, intrusion prevention system"
 )]
 struct Cli {
     /// Configuration directory.

@@ -33,8 +33,8 @@ copyright = "Virtualmin, Inc."
 license-file = ["../../LICENSE", "0"]
 extended-description = """\
 minsec watches log files and the systemd journal for authentication failures \
-and abuse and blocks offending addresses with nftables. A tiny, fast \
-replacement for fail2ban."""
+and abuse and blocks offending addresses with nftables. A tiny, fast, \
+intrusion prevention system."""
 section = "net"
 priority = "optional"
 depends = "libc6, nftables, systemd"
@@ -53,7 +53,7 @@ maintainer-scripts = "../../packaging/deb"
 
 [package.metadata.generate-rpm]
 license = "GPL-3.0-or-later"
-summary = "Minimalist security daemon: a tiny, fast fail2ban replacement"
+summary = "Minimalist security daemon: a tiny, fast, intrusion prevention system"
 url = "https://github.com/virtualmin/minsec"
 vendor = "Virtualmin, Inc."
 post_install_script = "../../packaging/rpm/post.sh"
