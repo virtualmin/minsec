@@ -114,6 +114,25 @@ composes with firewalld or iptables-nft without modifying their rules. The
 `exec` backend runs a script (`<cmd> ban <net> <ttl>` / `<cmd> unban <net>`)
 for anything else; ipset and pf backends are on the roadmap.
 
+## Packages
+
+Tagging `v*` runs `.github/workflows/release.yml`, which builds x86_64 and
+aarch64 binaries against glibc 2.28 (`cargo-zigbuild`), packages them with
+`cargo-deb` and `cargo-generate-rpm`, installs them in EL8/9/10, Debian 11/12
+and Ubuntu 22.04/24.04 containers, and attaches the `.rpm`/`.deb` files to the
+GitHub release. One package per architecture serves every supported distro;
+`scripts/check-glibc.sh` enforces the floor.
+
+To build packages locally:
+
+```sh
+cargo install cargo-zigbuild cargo-deb cargo-generate-rpm && pip install ziglang
+cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.28 -p minsec
+mkdir -p target/release && cp target/x86_64-unknown-linux-gnu/release/minsec target/release/
+cargo deb -p minsec --no-build --no-strip --target x86_64-unknown-linux-gnu
+cargo generate-rpm -p crates/minsec --target x86_64-unknown-linux-gnu
+```
+
 ## Development
 
 ```sh

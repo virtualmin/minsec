@@ -21,3 +21,55 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 toml.workspace = true
 ipnet.workspace = true
+
+# --- Packaging -------------------------------------------------------------
+# Built by `cargo deb` / `cargo generate-rpm` in .github/workflows/release.yml.
+# Binaries are built with cargo-zigbuild against glibc 2.28 so one package per
+# architecture serves EL8+ and Debian 11+/Ubuntu 22.04+.
+
+[package.metadata.deb]
+maintainer = "Virtualmin <support@virtualmin.com>"
+copyright = "Virtualmin, Inc."
+license-file = ["../../LICENSE", "0"]
+extended-description = """\
+minsec watches log files and the systemd journal for authentication failures \
+and abuse and blocks offending addresses with nftables. A tiny, fast \
+replacement for fail2ban."""
+section = "net"
+priority = "optional"
+depends = "libc6, nftables, systemd"
+recommends = "ca-certificates"
+assets = [
+  ["target/release/minsec", "usr/bin/", "755"],
+  ["../../packaging/minsec.toml", "etc/minsec/minsec.toml", "644"],
+  ["../../packaging/minsec.service", "lib/systemd/system/minsec.service", "644"],
+  ["../../packaging/minsec.sysusers.conf", "usr/lib/sysusers.d/minsec.conf", "644"],
+  ["../../packaging/minsec.tmpfiles.conf", "usr/lib/tmpfiles.d/minsec.conf", "644"],
+  ["../../README.md", "usr/share/doc/minsec/README.md", "644"],
+  ["../../docs/PLAN.md", "usr/share/doc/minsec/PLAN.md", "644"],
+]
+conf-files = ["/etc/minsec/minsec.toml"]
+maintainer-scripts = "../../packaging/deb"
+
+[package.metadata.generate-rpm]
+license = "GPL-3.0-or-later"
+summary = "Minimalist security daemon: a tiny, fast fail2ban replacement"
+url = "https://github.com/virtualmin/minsec"
+vendor = "Virtualmin, Inc."
+post_install_script = "../../packaging/rpm/post.sh"
+pre_uninstall_script = "../../packaging/rpm/preun.sh"
+post_uninstall_script = "../../packaging/rpm/postun.sh"
+assets = [
+  { source = "target/release/minsec", dest = "/usr/bin/minsec", mode = "755" },
+  { source = "packaging/minsec.toml", dest = "/etc/minsec/minsec.toml", mode = "644", config = "noreplace" },
+  { source = "packaging/minsec.service", dest = "/usr/lib/systemd/system/minsec.service", mode = "644" },
+  { source = "packaging/minsec.sysusers.conf", dest = "/usr/lib/sysusers.d/minsec.conf", mode = "644" },
+  { source = "packaging/minsec.tmpfiles.conf", dest = "/usr/lib/tmpfiles.d/minsec.conf", mode = "644" },
+  { source = "README.md", dest = "/usr/share/doc/minsec/README.md", mode = "644", doc = true },
+  { source = "docs/PLAN.md", dest = "/usr/share/doc/minsec/PLAN.md", mode = "644", doc = true },
+  { source = "LICENSE", dest = "/usr/share/licenses/minsec/LICENSE", mode = "644", doc = true },
+]
+
+[package.metadata.generate-rpm.requires]
+nftables = "*"
+systemd = "*"

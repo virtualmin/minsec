@@ -1,0 +1,107 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  GLIBC_FLOOR: "2.28"   # EL8; everything newer (EL9/10, Debian 11+, Ubuntu 22.04+) is covered
+
+jobs:
+  build:
+    name: ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            target: x86_64-unknown-linux-gnu
+            deb_arch: amd64
+          - arch: aarch64
+            target: aarch64-unknown-linux-gnu
+            deb_arch: arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Install packaging tools
+        run: |
+          pip install ziglang
+          cargo install --locked cargo-zigbuild cargo-deb cargo-generate-rpm
+      - name: Build (glibc ${{ env.GLIBC_FLOOR }})
+        run: |
+          cargo zigbuild --release --target ${{ matrix.target }}.${{ env.GLIBC_FLOOR }} -p minsec
+          # cargo-deb/generate-rpm look under target/release by default; give them the cross build.
+          mkdir -p target/release && cp target/${{ matrix.target }}/release/minsec target/release/minsec
+      - name: Verify dependency floor
+        run: |
+          scripts/check-glibc.sh target/release/minsec ${{ env.GLIBC_FLOOR }}
+      - name: Package
+        run: |
+          cargo deb -p minsec --no-build --no-strip --target ${{ matrix.target }}
+          cargo generate-rpm -p crates/minsec --target ${{ matrix.target }}
+          mkdir -p dist
+          cp target/${{ matrix.target }}/debian/*.deb dist/
+          cp target/${{ matrix.target }}/generate-rpm/*.rpm dist/
+          cp target/release/minsec dist/minsec-${{ matrix.arch }}
+          ls -la dist
+      - name: Inspect packages
+        run: |
+          for f in dist/*.deb; do dpkg-deb --info "$f" | sed -n '1,25p'; dpkg-deb --contents "$f"; done
+          sudo apt-get install -y rpm >/dev/null
+          for f in dist/*.rpm; do rpm -qip "$f"; rpm -qlp "$f"; rpm -qp --requires "$f"; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.arch }}
+          path: dist/*
+
+  smoke:
+    name: install smoke (${{ matrix.image }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["almalinux:8", "almalinux:9", "almalinux:10", "debian:11", "debian:12", "ubuntu:22.04", "ubuntu:24.04"]
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages-x86_64
+          path: dist
+      - name: Install and run
+        run: |
+          set -e
+          if command -v dnf >/dev/null; then
+            dnf install -y dist/*.x86_64.rpm
+          else
+            apt-get update -qq && apt-get install -y -qq ./dist/*_amd64.deb
+          fi
+          minsec --version
+          minsec check
+          minsec filters
+          echo 'sshd[1]: Failed password for root from 198.51.100.7 port 1 ssh2' | minsec test sshd - -q
+
+  release:
+    needs: [build, smoke]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Checksums
+        run: |
+          mkdir -p dist && cp artifacts/*/* dist/
+          (cd dist && sha256sum * > SHA256SUMS)
+          ls -la dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

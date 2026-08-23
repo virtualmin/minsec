@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+if [ "$1" = "configure" ]; then
+    systemd-sysusers minsec.conf >/dev/null 2>&1 || true
+    systemd-tmpfiles --create minsec.conf >/dev/null 2>&1 || true
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload >/dev/null 2>&1 || true
+        if [ -z "$2" ]; then
+            # Fresh install: enable, but let the admin start it after reviewing config.
+            systemctl enable minsec.service >/dev/null 2>&1 || true
+            echo "minsec installed. Review /etc/minsec/minsec.toml, then: systemctl start minsec"
+        else
+            systemctl try-restart minsec.service >/dev/null 2>&1 || true
+        fi
+    fi
+fi
+exit 0
