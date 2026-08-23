@@ -22,11 +22,12 @@ jobs:
             target: aarch64-unknown-linux-gnu
             deb_arch: arm64
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable branch
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
       - name: Check tag matches Cargo.toml version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -38,8 +39,11 @@ jobs:
           fi
       - name: Install packaging tools
         run: |
-          pip install ziglang
-          cargo install --locked cargo-zigbuild cargo-deb cargo-generate-rpm
+          # Exact versions: these tools produce the release artifacts, so an
+          # upstream release must not silently change what we ship. Bump
+          # deliberately.
+          pip install ziglang==0.16.0
+          cargo install --locked cargo-zigbuild@0.23.0 cargo-deb@3.7.0 cargo-generate-rpm@0.21.0
       - name: Build (glibc ${{ env.GLIBC_FLOOR }})
         run: |
           cargo zigbuild --release --target ${{ matrix.target }}.${{ env.GLIBC_FLOOR }} -p minsec
@@ -62,7 +66,7 @@ jobs:
           for f in dist/*.deb; do dpkg-deb --info "$f" | sed -n '1,25p'; dpkg-deb --contents "$f"; done
           sudo apt-get install -y rpm >/dev/null
           for f in dist/*.rpm; do rpm -qip "$f"; rpm -qlp "$f"; rpm -qp --requires "$f"; done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: packages-${{ matrix.arch }}
           path: dist/*
@@ -78,7 +82,7 @@ jobs:
     container:
       image: ${{ matrix.image }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: packages-x86_64
           path: dist
@@ -102,7 +106,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: artifacts
       - name: Checksums
@@ -110,7 +114,7 @@ jobs:
           mkdir -p dist && cp artifacts/*/* dist/
           (cd dist && sha256sum * > SHA256SUMS)
           ls -la dist
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: dist/*
           generate_release_notes: true

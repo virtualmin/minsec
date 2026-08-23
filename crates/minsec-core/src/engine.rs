@@ -11,6 +11,10 @@ use crate::tracker::{TrackKey, Tracker, Verdict};
 use ipnet::IpNet;
 use std::collections::{BTreeMap, HashMap};
 use std::net::IpAddr;
+
+/// Highest UID treated as a system account for journal provenance. Matches
+/// the `SYS_UID_MAX` default on every major distribution (`login.defs`).
+const SYSTEM_UID_MAX: u32 = 999;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -58,6 +62,11 @@ pub struct Decision {
     pub net: IpNet,
     pub banned: bool,
     pub hits: u32,
+}
+
+/// True if the two networks share any address.
+fn overlaps(a: &IpNet, b: &IpNet) -> bool {
+    a.contains(b) || b.contains(a)
 }
 
 impl Engine {
@@ -183,15 +192,32 @@ impl Engine {
     fn filters_for(&self, origin: &Origin) -> Vec<u16> {
         match origin {
             Origin::File(p) => self.routes_file.get(p).cloned().unwrap_or_default(),
-            Origin::Journal { unit, identifier, comm } => self
+            Origin::Journal {
+                unit,
+                identifier,
+                comm,
+                uid,
+            } => self
                 .routes_journal
                 .iter()
                 .filter(|(sel, _)| {
-                    unit.as_deref().is_some_and(|u| sel.units.iter().any(|x| x == u))
-                        || identifier
+                    // `_SYSTEMD_UNIT` is assigned by journald from the sender's
+                    // cgroup and cannot be forged, so it is sufficient alone.
+                    if unit.as_deref().is_some_and(|u| sel.units.iter().any(|x| x == u)) {
+                        return true;
+                    }
+                    // `SYSLOG_IDENTIFIER` and `_COMM` are sender-chosen: any
+                    // local user can `logger -t sshd 'Failed password ...'`
+                    // and have a victim address banned. Only honour them from
+                    // system accounts (the services we watch all run as
+                    // root or a dedicated daemon user); fail closed when
+                    // journald did not record a sender UID.
+                    let trusted = uid.is_some_and(|u| u <= SYSTEM_UID_MAX);
+                    trusted
+                        && (identifier
                             .as_deref()
                             .is_some_and(|i| sel.identifiers.iter().any(|x| x == i))
-                        || comm.as_deref().is_some_and(|c| sel.comm.iter().any(|x| x == c))
+                            || comm.as_deref().is_some_and(|c| sel.comm.iter().any(|x| x == c)))
                 })
                 .map(|(_, i)| *i)
                 .collect(),
@@ -223,6 +249,15 @@ impl Engine {
             return None;
         }
         let net = crate::ip::to_key(ip, self.cfg.defaults.ipv6_prefix);
+        // IPv6 hosts are widened to `ipv6_prefix` (a /64 by default) and the
+        // *network* is what the backend bans. Checking only the host above
+        // would let an attacker sharing a /64 with an allowlisted address get
+        // that whole prefix dropped on backends that have no allow set of
+        // their own (`exec`). Never ban a network that overlaps the allowlist.
+        if self.allow.iter().any(|a| overlaps(a, &net)) {
+            tracing::debug!(%ip, %net, "ban network overlaps allowlist; ignored");
+            return None;
+        }
         let lf = &mut self.filters[idx as usize];
         lf.matched += 1;
         if self.active.get(&net).is_some_and(|b| b.until > now) {
@@ -298,6 +333,9 @@ impl Engine {
                 filter: Some(idx),
             },
         );
+        if !self.history.contains_key(&net) {
+            self.trim_history();
+        }
         let h = self.history.entry(net).or_insert(BanHistory { count: 0, last: now });
         h.count += 1;
         h.last = now;
@@ -314,7 +352,7 @@ impl Engine {
     }
 
     pub fn manual_ban(&mut self, net: IpNet, ttl: Option<Duration>, now: u32) -> anyhow::Result<()> {
-        if self.allow.iter().any(|a| a.contains(&net.addr())) || crate::ip::is_loopback_or_unspecified(net.addr()) {
+        if self.allow.iter().any(|a| overlaps(a, &net)) || crate::ip::is_loopback_or_unspecified(net.addr()) {
             anyhow::bail!("{net} is on the allow list (or local); refusing to ban");
         }
         let ttl = ttl.unwrap_or(self.cfg.defaults.bantime.0);
@@ -369,9 +407,42 @@ impl Engine {
         let dropped = self.tracker.sweep(now, idle);
         let memory = self.cfg.defaults.escalate.memory.secs() as u32;
         self.history.retain(|_, h| now.saturating_sub(h.last) <= memory);
+        self.trim_history();
         if dropped > 0 {
             tracing::debug!(dropped, tracked = self.tracker.len(), "tracker sweep");
         }
+        if self.active.len() > self.cfg.defaults.max_tracked {
+            // Not capped: every entry is a live ban and dropping it would
+            // silently unprotect the host. Make saturation visible instead.
+            tracing::warn!(
+                active = self.active.len(),
+                max_tracked = self.cfg.defaults.max_tracked,
+                "active bans exceed max_tracked; consider a shorter bantime or wider ipv6_prefix"
+            );
+        }
+    }
+
+    /// Keep escalation history within `max_tracked` entries so a long
+    /// `escalate.memory` window cannot turn high-cardinality bans into
+    /// unbounded daemon memory. Oldest entries go first, in a batch, so the
+    /// O(n) scan is amortised the same way as [`Tracker`] eviction.
+    fn trim_history(&mut self) {
+        let cap = self.cfg.defaults.max_tracked.max(16);
+        if self.history.len() < cap {
+            return;
+        }
+        let keep = cap - (cap / 32).max(1);
+        let drop = self.history.len() - keep;
+        let mut all: Vec<(u32, IpNet)> = self.history.iter().map(|(n, h)| (h.last, *n)).collect();
+        all.select_nth_unstable_by_key(drop - 1, |e| e.0);
+        for (_, n) in &all[..drop] {
+            self.history.remove(n);
+        }
+        tracing::debug!(
+            dropped = drop,
+            history = self.history.len(),
+            "escalation history trimmed"
+        );
     }
 
     pub fn status(&mut self, now: u32) -> Status {
@@ -500,6 +571,92 @@ mod tests {
         assert_eq!(
             e.escalated_ttl(Duration::from_secs(600), &net, 1000).0.as_secs(),
             7 * 86_400
+        );
+    }
+
+    #[test]
+    fn journal_identifier_requires_system_uid() {
+        let mut e = engine("");
+        e.routes_journal.push((
+            JournalSelector {
+                units: vec!["sshd.service".into()],
+                identifiers: vec!["sshd".into()],
+                comm: vec!["sshd".into()],
+            },
+            0,
+        ));
+        let origin = |unit: Option<&str>, ident: Option<&str>, comm: Option<&str>, uid: Option<u32>| Origin::Journal {
+            unit: unit.map(Arc::from),
+            identifier: ident.map(Arc::from),
+            comm: comm.map(Arc::from),
+            uid,
+        };
+        // Genuine sshd: unit matches, regardless of anything else.
+        assert_eq!(
+            e.filters_for(&origin(Some("sshd.service"), Some("sshd"), None, Some(0))),
+            vec![0]
+        );
+        assert_eq!(e.filters_for(&origin(Some("sshd.service"), None, None, None)), vec![0]);
+        // Identifier / comm from a system account (e.g. a non-unit sshd spawn).
+        assert_eq!(e.filters_for(&origin(None, Some("sshd"), None, Some(0))), vec![0]);
+        assert_eq!(e.filters_for(&origin(None, None, Some("sshd"), Some(999))), vec![0]);
+        // `logger -t sshd` from an ordinary user: spoofable fields, untrusted uid.
+        assert!(e
+            .filters_for(&origin(Some("session-2.scope"), Some("sshd"), None, Some(1000)))
+            .is_empty());
+        assert!(e
+            .filters_for(&origin(None, Some("sshd"), Some("sshd"), Some(1000)))
+            .is_empty());
+        // No recorded sender uid: fail closed.
+        assert!(e.filters_for(&origin(None, Some("sshd"), None, None)).is_empty());
+    }
+
+    #[test]
+    fn ipv6_prefix_overlapping_allowlist_is_never_banned() {
+        // Allow one host; an attacker in the same /64 must not get the /64
+        // banned, since the exec backend has no allow set to protect it.
+        let mut e = engine("allow = [\"2001:db8:1:2::5/128\"]");
+        let l = line("sshd[1]: Failed password for root from 2001:db8:1:2::bad port 1 ssh2");
+        for t in 0..10 {
+            assert!(e.handle_line(&l, 1000 + t).is_empty());
+        }
+        // A different /64 is still banned normally.
+        let l = line("sshd[1]: Failed password for root from 2001:db8:1:3::bad port 1 ssh2");
+        e.handle_line(&l, 1000);
+        e.handle_line(&l, 1000);
+        assert!(e.handle_line(&l, 1000)[0].banned);
+    }
+
+    #[test]
+    fn history_is_capped_at_max_tracked() {
+        let mut e = engine("max_tracked = 100");
+        for i in 0..100u32 {
+            let net: IpNet = format!("10.{}.{}.0/32", i / 256, i % 256).parse().unwrap();
+            e.history.insert(
+                net,
+                BanHistory {
+                    count: 1,
+                    last: 1000 + i,
+                },
+            );
+        }
+        // Inserting a new net at the cap trims a batch of the oldest first.
+        let hit = |e: &mut Engine, s: &str, t: u32| {
+            let l = line(&format!("sshd[1]: Failed password for root from {s} port 1 ssh2"));
+            for _ in 0..3 {
+                e.handle_line(&l, t);
+            }
+        };
+        hit(&mut e, "198.51.100.7", 5000);
+        assert!(e.history.len() <= 100);
+        assert!(e.history.contains_key(&"198.51.100.7/32".parse::<IpNet>().unwrap()));
+        assert!(
+            !e.history.contains_key(&"10.0.0.0/32".parse::<IpNet>().unwrap()),
+            "oldest evicted"
+        );
+        assert!(
+            e.history.contains_key(&"10.0.99.0/32".parse::<IpNet>().unwrap()),
+            "newest kept"
         );
     }
 

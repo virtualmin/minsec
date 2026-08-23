@@ -13,6 +13,9 @@ use std::time::Duration;
 /// Upper bound on `maxretry`; also the ring size.
 pub const MAX_RETRY_CAP: u32 = 32;
 
+/// At the cap, evict `len / EVICT_DIVISOR` entries per scan.
+const EVICT_DIVISOR: usize = 32;
+
 #[derive(Clone, Copy)]
 struct Window {
     ts: [u32; MAX_RETRY_CAP as usize],
@@ -98,7 +101,7 @@ impl Tracker {
     pub fn hit(&mut self, key: TrackKey, now: u32, findtime: Duration, maxretry: u32) -> Verdict {
         let cap = maxretry.clamp(1, MAX_RETRY_CAP) as u8;
         if !self.map.contains_key(&key) && self.map.len() >= self.max_entries {
-            self.evict_one(now);
+            self.evict_batch();
         }
         let w = self.map.entry(key).or_insert_with(Window::new);
         w.push(now, cap);
@@ -128,9 +131,22 @@ impl Tracker {
         before - self.map.len()
     }
 
-    fn evict_one(&mut self, _now: u32) {
-        // Oldest "last hit" wins eviction. O(n) but only hit at the cap.
-        if let Some((&k, _)) = self.map.iter().min_by_key(|(_, w)| w.last(MAX_RETRY_CAP as u8)) {
+    /// Make room for one new key: drop the oldest ~1/32 of entries (by last
+    /// hit). Finding the oldest is O(n), so evicting one at a time would let a
+    /// steady stream of fresh addresses at the cap cost a full scan per line.
+    /// Evicting a batch amortises that to O(32) per insertion.
+    fn evict_batch(&mut self) {
+        let n = (self.map.len() / EVICT_DIVISOR).max(1);
+        let mut all: Vec<(u32, TrackKey)> = self
+            .map
+            .iter()
+            .map(|(k, w)| (w.last(MAX_RETRY_CAP as u8), *k))
+            .collect();
+        if n < all.len() {
+            all.select_nth_unstable_by_key(n - 1, |e| e.0);
+            all.truncate(n);
+        }
+        for (_, k) in all {
             self.map.remove(&k);
         }
     }
@@ -188,6 +204,25 @@ mod tests {
         let n = t.len();
         assert_eq!(t.sweep(5000, Duration::from_secs(10)), n);
         assert!(t.is_empty());
+    }
+
+    #[test]
+    fn cap_evicts_oldest_in_batches() {
+        let mut t = Tracker::new(64);
+        let ft = Duration::from_secs(6000);
+        for n in 0..64u8 {
+            t.hit(key(n), 1000 + n as u32, ft, 5);
+        }
+        assert_eq!(t.len(), 64);
+        // One new key at the cap evicts a batch (64/32 = 2) of the oldest,
+        // so the next new key fits without another scan.
+        t.hit(key(100), 2000, ft, 5);
+        assert_eq!(t.len(), 63);
+        t.hit(key(101), 2000, ft, 5);
+        assert_eq!(t.len(), 64);
+        // The oldest two went; the newest survivors did not.
+        assert_eq!(t.hit(key(0), 2001, ft, 5), Verdict::Below { hits: 1 });
+        assert_eq!(t.hit(key(63), 2001, ft, 5), Verdict::Below { hits: 2 });
     }
 
     #[test]
