@@ -1,6 +1,6 @@
 [package]
 name = "minsec"
-description = "Minimalist security daemon: a tiny, fast fail2ban replacement"
+description = "Minimalist security daemon: a tiny, fast, intrusion prevention system"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
