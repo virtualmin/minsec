@@ -10,7 +10,9 @@ constraints fail2ban does not meet:
 * **Tiny.** One ~2.5 MB binary; ~2 MB anonymous RSS with ten filters enabled.
   No log text is retained, per-address state is a fixed-size ring, and the
   kernel — not the daemon — owns the ban list (nftables set elements with
-  timeouts), so bans expire on their own and survive restarts.
+  timeouts), so bans expire on their own and survive restarts. (2MB not
+  counting linked ~30MB systemd lib, which is shared with all other journal
+  users. It's free real estate.)
 * **Fast.** Single-threaded streaming parser: one combined regex per filter
   behind a literal prefilter; ~5M lines/s on a laptop core.
 * **Simple to operate.** One TOML file plus drop-ins, built-in filters for the
