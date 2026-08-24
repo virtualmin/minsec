@@ -46,12 +46,15 @@ jobs:
           cargo install --locked cargo-zigbuild@0.23.0 cargo-deb@3.7.0 cargo-generate-rpm@0.21.0
       - name: Build (glibc ${{ env.GLIBC_FLOOR }})
         run: |
-          cargo zigbuild --release --target ${{ matrix.target }}.${{ env.GLIBC_FLOOR }} -p minsec
+          cargo zigbuild --release --target ${{ matrix.target }}.${{ env.GLIBC_FLOOR }} -p minsec -p minsec-sync
           # cargo-deb/generate-rpm look under target/release by default; give them the cross build.
-          mkdir -p target/release && cp target/${{ matrix.target }}/release/minsec target/release/minsec
+          mkdir -p target/release
+          cp target/${{ matrix.target }}/release/minsec target/release/minsec
+          cp target/${{ matrix.target }}/release/minsec-sync target/release/minsec-sync
       - name: Verify dependency floor
         run: |
           scripts/check-glibc.sh target/release/minsec ${{ env.GLIBC_FLOOR }}
+          scripts/check-glibc.sh target/release/minsec-sync ${{ env.GLIBC_FLOOR }}
       - name: Package
         run: |
           cargo deb -p minsec --no-build --no-strip --target ${{ matrix.target }}
@@ -60,6 +63,7 @@ jobs:
           cp target/${{ matrix.target }}/debian/*.deb dist/
           cp target/${{ matrix.target }}/generate-rpm/*.rpm dist/
           cp target/release/minsec dist/minsec-${{ matrix.arch }}
+          cp target/release/minsec-sync dist/minsec-sync-${{ matrix.arch }}
           ls -la dist
       - name: Inspect packages
         run: |
@@ -95,6 +99,8 @@ jobs:
             apt-get update -qq && apt-get install -y -qq ./dist/*_amd64.deb
           fi
           minsec --version
+          minsec-sync --version
+          minsec-sync run   # multiplayer not configured: must exit 0 quietly
           minsec check
           minsec filters
           echo 'sshd[1]: Failed password for root from 198.51.100.7 port 1 ssh2' | minsec test sshd - -q

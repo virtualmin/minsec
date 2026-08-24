@@ -26,7 +26,7 @@ by anything derived from your hardware or network.
 ## Opting in
 
 ```sh
-sudo install -m 0644 /usr/share/doc/minsec-sync/sync.toml.example /etc/minsec/sync.toml
+sudo install -m 0644 /usr/share/doc/minsec/sync.toml.example /etc/minsec/sync.toml
 sudo systemctl enable --now minsec-sync.timer
 ```
 
