@@ -61,8 +61,10 @@ Manual bans are never reported.
 Old or malformed events and networks broader than the reporting limits are
 skipped.
 .PP
-Reports contain the attacker network, event time, filter/category, hit count,
-and ban lifetime.
+Reports contain the attacker network, event time, filter name, hit count,
+ban lifetime, and repeat-offender depth.
+The filter name identifies the detection rule that matched, never the traffic
+that matched it; the server maps it to an abuse category.
 They do not contain log lines, usernames, or local user information.
 IPv6 host addresses and prefixes narrower than /64 are aggregated to /64.
 .SS pull

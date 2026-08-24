@@ -13,9 +13,18 @@ audit exactly what leaves the machine.
 
 One record per **automatic** ban: the attacker's network (IPv6 aggregated
 to /64), the filter name (`sshd`, `postfix-sasl`, …), the hit count, when
-it happened, and the local ban length. That's all. Never log lines, never
-usernames, never hostnames, never anything about your users or traffic.
-Manual bans and unbans are never reported. Retention and the full privacy
+it happened, the local ban length, and how many times that address has
+already been re-banned here. That's all. Never log lines, never usernames,
+never hostnames, never anything about your users or traffic. Manual bans
+and unbans are never reported.
+
+The filter name is the only field that says anything about *what* the
+attacker did, and it names a detection rule — never the traffic that
+matched it. The server maps it to an abuse category (mail credential abuse,
+web application brute force, generic infrastructure abuse, …), which is
+what the crowd blocklist and the mail-facing outputs are built from. If you
+write a custom filter, its name is sent as-is; names the server does not
+recognise are counted but never published. Retention and the full privacy
 posture are documented in the backend repo (`docs/PRIVACY.md` on
 minsec.io).
 

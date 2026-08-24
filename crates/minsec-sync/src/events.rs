@@ -19,6 +19,8 @@ pub struct BanEvent {
     pub ttl: u64,
     pub hits: u32,
     #[serde(default)]
+    pub escalation: u32,
+    #[serde(default)]
     pub manual: bool,
 }
 

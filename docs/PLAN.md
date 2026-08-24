@@ -251,6 +251,42 @@ evaluation, more filters from community PRs.
 `minsec-sync`, report API + feed server (separate repo), opt-in flow in
 Virtualmin, curated feed, then paid tiers / reputation API / WAF integrations.
 
+**Phase 5 — Intelligence**
+Turn the crowd dataset into products beyond the nftables feed. The backend
+roadmap for this lives in `docs/PLAN.md` in the minsec.io repo; the
+agent-side work it implies is listed below.
+
+---
+
+## 5a. Agent-side work for the intelligence roadmap
+
+The crowd backend now maps each reported filter name through a signature
+registry to an abuse category (`mail-auth`, `mail-mx`, `web-auth`,
+`web-exploit`, `infra`), and publishes the result as a categorised DNSBL for
+mail filtering as well as the existing firewall feed. That machinery is
+entirely server-side — the wire format still carries only an address, a rule
+name, and counters. What it asks of the agent:
+
+- **Exploit-probe filters.** The filter engine already matches on full
+  access-log lines including the request path (`filters/wordpress.toml` is a
+  path rule, not an auth-failure rule). Rules named for what they detect —
+  `cve-2024-4577-php-cgi`, `wp-file-manager-rce` — make the *rule name* the
+  signature id, which turns existing reports into CVE-attributed telemetry
+  with no new fields and nothing new collected. This is the highest-value
+  agent-side item on the list.
+- **Filter metadata.** A `category` hint in the filter TOML would let a
+  custom filter declare what it detects instead of landing in the backend's
+  `unclassified` queue. Advisory only: the server must keep deciding, since
+  a reported hint is attacker-influenced input.
+- **Targeting feedback.** The backend knows whether an address is hitting
+  only this host or thousands. Surfacing that in `minsec status` and the
+  Virtualmin UI is the most useful thing the crowd can give an individual
+  operator, and needs a small agent-facing lookup in `minsec-sync`.
+- **Reporting granularity.** `escalation` now rides along (0 on a first ban,
+  incrementing per re-ban). If per-filter report suppression is ever wanted
+  for privacy-conscious operators, a `report = false` key on a filter is the
+  natural shape.
+
 ---
 
 ## 6. Verification
