@@ -34,19 +34,27 @@ license-file = ["../../LICENSE", "0"]
 extended-description = """\
 minsec watches log files and the systemd journal for authentication failures \
 and abuse and blocks offending addresses with nftables. A tiny, fast, \
-intrusion prevention system."""
+intrusion prevention system. Includes minsec-sync, the opt-in multiplayer \
+client (enable by creating /etc/minsec/sync.toml)."""
 section = "net"
 priority = "optional"
 depends = "libc6, nftables, systemd"
 recommends = "ca-certificates"
+# sync.toml is shipped as documentation, never installed to /etc/minsec —
+# its presence there is the user's multiplayer opt-in.
 assets = [
   ["target/release/minsec", "usr/bin/", "755"],
+  ["target/release/minsec-sync", "usr/bin/", "755"],
   ["../../packaging/minsec.toml", "etc/minsec/minsec.toml", "644"],
   ["../../packaging/minsec.service", "lib/systemd/system/minsec.service", "644"],
+  ["../../packaging/minsec-sync.service", "lib/systemd/system/minsec-sync.service", "644"],
+  ["../../packaging/minsec-sync.timer", "lib/systemd/system/minsec-sync.timer", "644"],
   ["../../packaging/minsec.sysusers.conf", "usr/lib/sysusers.d/minsec.conf", "644"],
   ["../../packaging/minsec.tmpfiles.conf", "usr/lib/tmpfiles.d/minsec.conf", "644"],
+  ["../../packaging/sync.toml", "usr/share/doc/minsec/sync.toml.example", "644"],
   ["../../README.md", "usr/share/doc/minsec/README.md", "644"],
   ["../../docs/PLAN.md", "usr/share/doc/minsec/PLAN.md", "644"],
+  ["../../docs/MULTIPLAYER.md", "usr/share/doc/minsec/MULTIPLAYER.md", "644"],
 ]
 conf-files = ["/etc/minsec/minsec.toml"]
 maintainer-scripts = "../../packaging/deb"
@@ -61,12 +69,17 @@ pre_uninstall_script = "../../packaging/rpm/preun.sh"
 post_uninstall_script = "../../packaging/rpm/postun.sh"
 assets = [
   { source = "target/release/minsec", dest = "/usr/bin/minsec", mode = "755" },
+  { source = "target/release/minsec-sync", dest = "/usr/bin/minsec-sync", mode = "755" },
   { source = "packaging/minsec.toml", dest = "/etc/minsec/minsec.toml", mode = "644", config = "noreplace" },
   { source = "packaging/minsec.service", dest = "/usr/lib/systemd/system/minsec.service", mode = "644" },
+  { source = "packaging/minsec-sync.service", dest = "/usr/lib/systemd/system/minsec-sync.service", mode = "644" },
+  { source = "packaging/minsec-sync.timer", dest = "/usr/lib/systemd/system/minsec-sync.timer", mode = "644" },
   { source = "packaging/minsec.sysusers.conf", dest = "/usr/lib/sysusers.d/minsec.conf", mode = "644" },
   { source = "packaging/minsec.tmpfiles.conf", dest = "/usr/lib/tmpfiles.d/minsec.conf", mode = "644" },
+  { source = "packaging/sync.toml", dest = "/usr/share/doc/minsec/sync.toml.example", mode = "644", doc = true },
   { source = "README.md", dest = "/usr/share/doc/minsec/README.md", mode = "644", doc = true },
   { source = "docs/PLAN.md", dest = "/usr/share/doc/minsec/PLAN.md", mode = "644", doc = true },
+  { source = "docs/MULTIPLAYER.md", dest = "/usr/share/doc/minsec/MULTIPLAYER.md", mode = "644", doc = true },
   { source = "LICENSE", dest = "/usr/share/licenses/minsec/LICENSE", mode = "644", doc = true },
 ]
 
