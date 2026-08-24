@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="70mm"
+   height="70mm"
+   viewBox="0 0 70 70"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   sodipodi:docname="minsec-aperture-logo.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="2.5799102"
+     inkscape:cx="130.6247"
+     inkscape:cy="158.14504"
+     inkscape:window-width="2149"
+     inkscape:window-height="1269"
+     inkscape:window-x="26"
+     inkscape:window-y="23"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       transform="matrix(0.42333333,0,0,0.42333333,35,28.147325)"
+       style="color:#0b0b0b;font-weight:400;font-size:16px;font-family:anthropic-sans, '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;dominant-baseline:auto;text-anchor:start;fill:#0b0b0b;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter"
+       id="g6">
+      <path
+         d="M -23,-43.3 H 23 L 18.8,-6.8 Z"
+         style="color:#0b0b0b;font-weight:400;font-size:16px;font-family:anthropic-sans, '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;dominant-baseline:auto;text-anchor:start;opacity:1;fill:#88aa00;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter"
+         id="path1" />
+      <path
+         d="M -23,-43.3 H 23 L 18.8,-6.8 Z"
+         transform="rotate(60)"
+         style="color:#0b0b0b;font-weight:400;font-size:16px;font-family:anthropic-sans, '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;dominant-baseline:auto;text-anchor:start;opacity:1;fill:#d4aa00;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter"
+         id="path2" />
+      <path
+         d="M -23,-43.3 H 23 L 18.8,-6.8 Z"
+         transform="rotate(120)"
+         style="color:#0b0b0b;font-weight:400;font-size:16px;font-family:anthropic-sans, '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;dominant-baseline:auto;text-anchor:start;opacity:1;fill:#aa4400;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter"
+         id="path3" />
+      <path
+         d="M -23,-43.3 H 23 L 18.8,-6.8 Z"
+         transform="scale(-1)"
+         style="color:#0b0b0b;font-weight:400;font-size:16px;font-family:anthropic-sans, '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;dominant-baseline:auto;text-anchor:start;opacity:1;fill:#800000;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter"
+         id="path4" />
+      <path
+         d="M -23,-43.3 H 23 L 18.8,-6.8 Z"
+         transform="rotate(-120)"
+         style="color:#0b0b0b;font-weight:400;font-size:16px;font-family:anthropic-sans, '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;dominant-baseline:auto;text-anchor:start;opacity:1;fill:#5a2ca0;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter"
+         id="path5" />
+      <path
+         d="M -23,-43.3 H 23 L 18.8,-6.8 Z"
+         transform="rotate(-60)"
+         style="color:#0b0b0b;font-weight:400;font-size:16px;font-family:anthropic-sans, '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;dominant-baseline:auto;text-anchor:start;opacity:1;fill:#2c89a0;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter"
+         id="path6" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:12.7px;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';writing-mode:lr-tb;direction:ltr;fill:#666666;fill-opacity:1;stroke-width:0.264583"
+       x="8.3934956"
+       y="60.030621"
+       id="text1"><tspan
+         sodipodi:role="line"
+         id="tspan1"
+         style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:12.7px;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';fill:#666666;fill-opacity:1;stroke-width:0.264583"
+         x="8.3934956"
+         y="60.030621">MINSEC</tspan></text>
+  </g>
+</svg>
