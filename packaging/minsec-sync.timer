@@ -1,0 +1,11 @@
+[Unit]
+Description=Run minsec multiplayer sync every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+# Spread agent traffic; the backend caches feeds for 5 minutes anyway.
+RandomizedDelaySec=60s
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,35 @@
+[
+  {
+    "name": "empty-body",
+    "seed_hex": "0101010101010101010101010101010101010101010101010101010101010101",
+    "pubkey_b64": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=",
+    "host_id": "018f3c00-0000-7000-8000-000000000001",
+    "timestamp": 1724371200,
+    "body": "",
+    "body_sha256_hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "canonical": "minsec-report-v1\n018f3c00-0000-7000-8000-000000000001\n1724371200\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "signature_b64": "oBh7ZNSBulvALYOOMCkFHQDyeQSkeyDzcsGkwLsjm2fnXmmCAulgv6PzSme2+i6poINXmnJ0+3hGtqlKLX24CA=="
+  },
+  {
+    "name": "typical-batch",
+    "seed_hex": "0101010101010101010101010101010101010101010101010101010101010101",
+    "pubkey_b64": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=",
+    "host_id": "018f3c00-0000-7000-8000-000000000001",
+    "timestamp": 1724371260,
+    "body": "{\"seq\":42,\"agent_version\":\"minsec-sync/0.1.0\",\"reports\":[{\"ts\":1724371190,\"ip\":\"203.0.113.7/32\",\"filter\":\"sshd\",\"count\":5,\"ban_ttl\":3600},{\"ts\":1724371195,\"ip\":\"2001:db8:1:2::/64\",\"filter\":\"postfix-sasl\",\"count\":3,\"ban_ttl\":7200}]}",
+    "body_sha256_hex": "fef22f1311aaf8cf52170a5c196f533a898b0ebaefa49cd5cdfbf672939a2e1f",
+    "canonical": "minsec-report-v1\n018f3c00-0000-7000-8000-000000000001\n1724371260\nfef22f1311aaf8cf52170a5c196f533a898b0ebaefa49cd5cdfbf672939a2e1f",
+    "signature_b64": "x5yFOAnU6WZ/hRNh/o4i5kLzUezmm/AzNnc7I4rpNvaxsKSLa5AK8BhdLo6xgIP0f3JYMUXA/sIsY+IPflGYAg=="
+  },
+  {
+    "name": "second-key-whitespace-body",
+    "seed_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+    "pubkey_b64": "IVL40Zt5HSRFMkLhXy6rbLfP+ntqXtMAl5YOBpiB2xI=",
+    "host_id": "018f3c00-0000-7000-8000-000000000002",
+    "timestamp": 1893456000,
+    "body": "{ \"seq\": 1,\n  \"reports\": [] }",
+    "body_sha256_hex": "70232068e9bb21c4b3309d8326ea635e263524d6ee5c441ebd283358f56ce0c3",
+    "canonical": "minsec-report-v1\n018f3c00-0000-7000-8000-000000000002\n1893456000\n70232068e9bb21c4b3309d8326ea635e263524d6ee5c441ebd283358f56ce0c3",
+    "signature_b64": "cqA80vIUXZdZh5DzLfPKnH8ieyp0gsmwaBhzlT8waLqBhY0Qejcse7WYYn76JettuQ+XZ+nzI0c8UrXecZHOAA=="
+  }
+]

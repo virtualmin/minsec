@@ -72,6 +72,16 @@ impl Nft {
         s.push_str(&format!(
             "add set {TABLE} allow6 {{ type ipv6_addr; flags interval; }}\n"
         ));
+        // Crowd blocklist sets are populated by minsec-sync (multiplayer
+        // mode); empty and free until the user opts in. The daemon owns the
+        // sets and rules so that flushing its chains on startup cannot strip
+        // crowd filtering.
+        s.push_str(&format!(
+            "add set {TABLE} crowd4 {{ type ipv4_addr; flags interval; }}\n"
+        ));
+        s.push_str(&format!(
+            "add set {TABLE} crowd6 {{ type ipv6_addr; flags interval; }}\n"
+        ));
         for hook in ["input", "forward"] {
             s.push_str(&format!(
                 "add chain {TABLE} {hook} {{ type filter hook {hook} priority -10; policy accept; }}\n"
@@ -81,6 +91,8 @@ impl Nft {
             s.push_str(&format!("add rule {TABLE} {hook} ip6 saddr @allow6 accept\n"));
             s.push_str(&format!("add rule {TABLE} {hook} ip saddr @ban4 counter drop\n"));
             s.push_str(&format!("add rule {TABLE} {hook} ip6 saddr @ban6 counter drop\n"));
+            s.push_str(&format!("add rule {TABLE} {hook} ip saddr @crowd4 counter drop\n"));
+            s.push_str(&format!("add rule {TABLE} {hook} ip6 saddr @crowd6 counter drop\n"));
         }
         s
     }
@@ -252,5 +264,13 @@ mod tests {
         let s = Nft::setup_script();
         assert!(s.lines().all(|l| l.contains("inet minsec")));
         assert!(s.contains("priority -10"));
+        // Crowd sets exist (populated by minsec-sync) and are enforced
+        // after allow and local bans.
+        for set in ["crowd4", "crowd6"] {
+            assert!(s.contains(&format!("add set inet minsec {set}")));
+            assert!(s.contains(&format!("@{set} counter drop")));
+        }
+        let allow = s.find("@allow4 accept").unwrap();
+        assert!(allow < s.find("@crowd4 counter drop").unwrap());
     }
 }

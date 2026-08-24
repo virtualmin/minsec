@@ -1,0 +1,69 @@
+[package]
+name = "minsec-sync"
+description = "minsec multiplayer client: reports automatic bans to minsec.io and pulls the crowd blocklist"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+minsec-proto = { path = "../minsec-proto" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+ipnet.workspace = true
+clap.workspace = true
+ed25519-dalek.workspace = true
+base64.workspace = true
+getrandom.workspace = true
+ureq.workspace = true
+
+[dev-dependencies]
+minsec-proto = { path = "../minsec-proto" }
+ed25519-dalek.workspace = true
+base64.workspace = true
+serde_json.workspace = true
+
+# Optional companion package: opt-in multiplayer, separate from the daemon.
+# Note: sync.toml is documentation, not a conffile — its presence in
+# /etc/minsec is the user's opt-in and must never come from the package.
+[package.metadata.deb]
+name = "minsec-sync"
+maintainer = "Virtualmin <support@virtualmin.com>"
+copyright = "Virtualmin, Inc."
+license-file = ["../../LICENSE", "0"]
+extended-description = """\
+Multiplayer mode for minsec: reports automatic bans (attacker network and \
+abuse category only) to minsec.io and pulls the crowd-sourced blocklist \
+into the crowd4/crowd6 nftables sets. Opt-in: enable by creating \
+/etc/minsec/sync.toml."""
+section = "net"
+priority = "optional"
+depends = "libc6, nftables, systemd, minsec"
+assets = [
+  ["target/release/minsec-sync", "usr/bin/", "755"],
+  ["../../packaging/minsec-sync.service", "lib/systemd/system/minsec-sync.service", "644"],
+  ["../../packaging/minsec-sync.timer", "lib/systemd/system/minsec-sync.timer", "644"],
+  ["../../packaging/sync.toml", "usr/share/doc/minsec-sync/sync.toml.example", "644"],
+  ["../../docs/MULTIPLAYER.md", "usr/share/doc/minsec-sync/MULTIPLAYER.md", "644"],
+]
+
+[package.metadata.generate-rpm]
+license = "GPL-3.0-or-later"
+summary = "minsec multiplayer client: crowd-sourced abuse reporting and blocklist"
+url = "https://github.com/virtualmin/minsec"
+vendor = "Virtualmin, Inc."
+assets = [
+  { source = "target/release/minsec-sync", dest = "/usr/bin/minsec-sync", mode = "755" },
+  { source = "packaging/minsec-sync.service", dest = "/usr/lib/systemd/system/minsec-sync.service", mode = "644" },
+  { source = "packaging/minsec-sync.timer", dest = "/usr/lib/systemd/system/minsec-sync.timer", mode = "644" },
+  { source = "packaging/sync.toml", dest = "/usr/share/doc/minsec-sync/sync.toml.example", mode = "644", doc = true },
+  { source = "docs/MULTIPLAYER.md", dest = "/usr/share/doc/minsec-sync/MULTIPLAYER.md", mode = "644", doc = true },
+]
+
+[package.metadata.generate-rpm.requires]
+minsec = "*"
+nftables = "*"
+systemd = "*"

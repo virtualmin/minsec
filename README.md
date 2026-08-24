@@ -21,9 +21,11 @@ constraints fail2ban does not meet:
   so UIs never scrape output.
 
 "Multiplayer mode" — opt-in crowd-sourced abuse reporting and a curated
-blocklist feed — is planned as a separate `minsec-sync` helper so the resident
-daemon never carries a TLS stack. See [docs/PLAN.md](docs/PLAN.md) for the full
-design and roadmap.
+blocklist feed — lives in the separate `minsec-sync` helper so the resident
+daemon never carries a TLS stack: it reports automatic bans (attacker network
+and abuse category only) and pulls the crowd blocklist into dedicated
+`crowd4`/`crowd6` nftables sets. See [docs/MULTIPLAYER.md](docs/MULTIPLAYER.md)
+to opt in, and [docs/PLAN.md](docs/PLAN.md) for the full design and roadmap.
 
 ## Status
 

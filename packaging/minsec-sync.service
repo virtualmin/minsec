@@ -1,0 +1,44 @@
+[Unit]
+Description=minsec multiplayer sync (report bans, pull crowd blocklist)
+Documentation=https://github.com/virtualmin/minsec
+After=network-online.target minsec.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Exits 0 immediately when /etc/minsec/sync.toml does not exist (opt-in).
+ExecStart=/usr/bin/minsec-sync run
+
+# Same unprivileged user as the daemon: reads its events log, shares its
+# nftables table (CAP_NET_ADMIN).
+User=minsec
+Group=minsec
+AmbientCapabilities=CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_NET_ADMIN
+NoNewPrivileges=true
+StateDirectory=minsec
+StateDirectoryMode=0750
+ConfigurationDirectory=minsec
+
+# Hardening
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
+Environment=MALLOC_ARENA_MAX=1
+MemoryMax=128M
