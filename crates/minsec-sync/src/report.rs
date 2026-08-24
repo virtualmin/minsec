@@ -73,6 +73,9 @@ fn to_report(ev: &BanEvent, now: u64) -> Option<Report> {
         filter: ev.filter.clone(),
         count: ev.hits.max(1) as i64,
         ban_ttl: ev.ttl as i64,
+        // Clamped to what the server accepts; the ladder never gets near
+        // this in practice, but a corrupt events line must not fail a batch.
+        escalation: ev.escalation.min(255),
     })
 }
 
@@ -139,6 +142,7 @@ mod tests {
             filter: filter.into(),
             ttl: 600,
             hits: 3,
+            escalation: 0,
             manual: false,
         }
     }
@@ -160,5 +164,31 @@ mod tests {
         assert!(to_report(&ban(now - MAX_EVENT_AGE - 1, "203.0.113.7/32", "sshd"), now).is_none());
         assert!(to_report(&ban(now, "203.0.113.7/32", "SSHD!"), now).is_none());
         assert!(to_report(&ban(now, "203.0.113.7/32", "postfix-sasl"), now).is_some());
+    }
+
+    #[test]
+    fn escalation_is_carried_and_clamped() {
+        let now = 1_000_000_000;
+        let mut ev = ban(now, "203.0.113.7/32", "sshd");
+        ev.escalation = 4;
+        assert_eq!(to_report(&ev, now).unwrap().escalation, 4);
+
+        ev.escalation = 9_000;
+        assert_eq!(to_report(&ev, now).unwrap().escalation, 255);
+    }
+
+    /// A zero escalation must not appear on the wire: batches from hosts
+    /// that see no repeat offenders stay byte-identical to the old format.
+    #[test]
+    fn zero_escalation_is_omitted() {
+        let now = 1_000_000_000;
+        let r = to_report(&ban(now, "203.0.113.7/32", "sshd"), now).unwrap();
+        let json = serde_json::to_string(&r).unwrap();
+        assert!(!json.contains("escalation"), "{json}");
+
+        let mut ev = ban(now, "203.0.113.7/32", "sshd");
+        ev.escalation = 2;
+        let json = serde_json::to_string(&to_report(&ev, now).unwrap()).unwrap();
+        assert!(json.contains(r#""escalation":2"#), "{json}");
     }
 }

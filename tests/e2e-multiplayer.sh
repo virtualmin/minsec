@@ -3,7 +3,8 @@
 # (minsec-sync) against the real Go backend (minsecd, from the minsec.io
 # repo). Three agents enroll (solving real proof-of-work), report the same
 # attacker, the backend scores it to quorum, and the feed pull must deliver
-# it back as an nft crowd4 update.
+# it back as an nft crowd4 update. The same reports must also reach the
+# categorised DNSBL zone with the right category bitmask.
 #
 # Requirements: cargo, go, and a PostgreSQL database this script may ruin.
 #
@@ -66,10 +67,15 @@ echo "== three agents enroll and report $ATTACKER"
 NOW="$(date +%s)"
 for i in 1 2 3; do
     dir="$(agent_conf "$i")"
-    printf '{"kind":"ban","ts":%s,"net":"%s/32","filter":"sshd","ttl":600,"hits":5,"escalation":0,"manual":false}\n' \
-        "$NOW" "$ATTACKER" >"$dir/events.jsonl"
+    # One infra signature and one mail-auth signature, so the zone answer
+    # must combine both category bits. escalation rises per agent to prove
+    # the field survives the round trip.
+    printf '{"kind":"ban","ts":%s,"net":"%s/32","filter":"sshd","ttl":600,"hits":5,"escalation":%s,"manual":false}\n' \
+        "$NOW" "$ATTACKER" "$i" >"$dir/events.jsonl"
+    printf '{"kind":"ban","ts":%s,"net":"%s/32","filter":"postfix-sasl","ttl":600,"hits":4,"manual":false}\n' \
+        "$NOW" "$ATTACKER" >>"$dir/events.jsonl"
     "$SYNC" --config "$dir/sync.toml" enroll | grep -q "enrolled as " || { echo "agent $i enroll failed"; exit 1; }
-    "$SYNC" --config "$dir/sync.toml" report | grep -q "1 accepted" || { echo "agent $i report failed"; exit 1; }
+    "$SYNC" --config "$dir/sync.toml" report | grep -q "2 accepted" || { echo "agent $i report failed"; exit 1; }
 done
 
 echo "== forcing a scoring tick"
@@ -83,7 +89,18 @@ echo "$out" | grep -q "$ATTACKER" || { echo "attacker missing from feed:"; echo 
 out="$("$SYNC" --config "$TMP/agent1/sync.toml" pull --dry-run)"
 echo "$out" | grep -q "feed v4: unchanged" || { echo "expected 304 on re-pull:"; echo "$out"; exit 1; }
 
+echo "== the dnsbl zone carries the category bitmask"
+zone="$(curl -fsS "http://$ADDR/v1/dnsbl/v4")"
+# mail-auth (2) | infra (32) = 34, basic tier so no high-confidence bit.
+echo "$zone" | grep -q "^:127\.0\.0\.34:" || { echo "wrong or missing category mask:"; echo "$zone"; exit 1; }
+echo "$zone" | grep -q "^$ATTACKER\$" || { echo "attacker missing from dnsbl zone:"; echo "$zone"; exit 1; }
+
+echo "== escalation reached the backend"
+esc="$(PGPASSWORD="${PGPASSWORD:-minsec}" psql "$DB_URL" -tAc \
+    "select coalesce(max(escalation), -1) from reports where filter = 'sshd'")"
+[ "$esc" = "3" ] || { echo "max escalation = $esc, want 3"; exit 1; }
+
 echo "== idempotent re-report is a no-op"
 "$SYNC" --config "$TMP/agent1/sync.toml" report | grep -q "reported 0 events" || { echo "cursor did not hold"; exit 1; }
 
-echo "PASS: enroll -> signed report -> quorum -> feed -> 304, Rust client against Go backend"
+echo "PASS: enroll -> signed report -> quorum -> feed + dnsbl -> 304, Rust client against Go backend"
