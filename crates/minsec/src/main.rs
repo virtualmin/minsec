@@ -2,7 +2,6 @@
 
 mod daemon;
 
-use anyhow::Context;
 use clap::{Parser, Subcommand};
 use minsec_core::config::{Config, DEFAULT_CONFIG_DIR};
 use minsec_core::control::{self, Request};
@@ -37,8 +36,14 @@ enum Cmd {
         #[arg(long)]
         replay: bool,
     },
-    /// Validate configuration and compile all enabled filters.
-    Check,
+    /// Validate configuration and compile filters.
+    Check {
+        /// Compile every discovered filter, including disabled custom filters.
+        #[arg(long)]
+        all: bool,
+    },
+    /// Inspect merged configuration, files, filters, and effective policy.
+    Inspect,
     /// Run a filter over a log file (or stdin) and show what would match.
     Test {
         filter: String,
@@ -97,16 +102,53 @@ fn run() -> anyhow::Result<()> {
             }
             daemon::run(cfg, replay)
         }
-        Cmd::Check => {
-            let cfg = Config::load_dir(&cli.config_dir)?;
-            let mut n = 0;
-            for name in cfg.enabled_filters() {
-                let def = cfg.filter_def(name)?;
-                CompiledFilter::compile(def).with_context(|| format!("filter `{name}`"))?;
-                n += 1;
+        Cmd::Check { all } => {
+            let result = minsec_core::inspection::check(&cli.config_dir, all);
+            if cli.json {
+                println!("{}", serde_json::to_string(&result)?);
+            } else if result.ok {
+                println!("ok: {} filter(s) checked", result.checked_filters.len());
+            } else {
+                for error in &result.errors {
+                    if let Some(filter) = &error.filter {
+                        eprintln!("filter `{filter}`: {}", error.error);
+                    } else {
+                        eprintln!("{}", error.error);
+                    }
+                }
             }
-            println!("ok: {n} filter(s) enabled, backend {:?}", cfg.defaults.backend);
-            Ok(())
+            if result.ok {
+                Ok(())
+            } else {
+                anyhow::bail!("configuration check failed")
+            }
+        }
+        Cmd::Inspect => {
+            match minsec_core::inspection::inspect(&cli.config_dir, env!("CARGO_PKG_VERSION")) {
+                Ok(inspection) => {
+                    if cli.json {
+                        println!("{}", serde_json::to_string(&inspection)?);
+                    } else {
+                        println!("minsec {} schema {}", inspection.version, inspection.schema_version);
+                        println!("config: {}", inspection.paths.config_dir.display());
+                        println!("filters: {}", inspection.filters.len());
+                    }
+                    Ok(())
+                }
+                Err(error) => {
+                    if cli.json {
+                        println!(
+                            "{}",
+                            serde_json::json!({
+                                "schema_version": minsec_core::inspection::SCHEMA_VERSION,
+                                "ok": false,
+                                "error": format!("{error:#}"),
+                            })
+                        );
+                    }
+                    Err(error)
+                }
+            }
         }
         Cmd::Test { filter, file, quiet } => {
             let cfg = Config::load_dir(&cli.config_dir).unwrap_or_default();
