@@ -1,0 +1,25 @@
+# minsec multiplayer ("crowd") configuration — /etc/minsec/sync.toml
+#
+# Creating this file is the opt-in: with it in place, the minsec-sync timer
+# enrolls this system automatically, reports automatic bans (attacker
+# network + abuse category only — never log lines, usernames, or anything
+# about your users; see https://minsec.io/privacy), and pulls the shared
+# blocklist into the crowd4/crowd6 nftables sets. Delete the file (and
+# `nft flush set inet minsec crowd4; nft flush set inet minsec crowd6`) to
+# opt back out.
+#
+# Every setting is optional; the defaults are shown.
+
+#server = "https://api.minsec.io"
+
+# Feed tier: "basic" (3+ independent reporters) or "high" (stricter quorum,
+# smaller list).
+#tier = "basic"
+
+# Contribute local automatic bans to the crowd.
+#report = true
+
+# Pull the crowd blocklist into nftables.
+#pull = true
+#ipv4 = true
+#ipv6 = true

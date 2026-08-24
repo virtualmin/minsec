@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/minsec-core", "crates/minsec"]
+members = ["crates/minsec-core", "crates/minsec", "crates/minsec-proto", "crates/minsec-sync"]
 
 [workspace.package]
 version = "0.1.4"
@@ -28,6 +28,11 @@ glob = "0.3"
 libc = "0.2"
 libloading = "0.8"
 futures-core = "0.3"
+ed25519-dalek = "2"
+sha2 = "0.10"
+base64 = "0.22"
+getrandom = "0.3"
+ureq = { version = "3", default-features = false, features = ["rustls", "gzip"] }
 
 [profile.release]
 opt-level = "s"
