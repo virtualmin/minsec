@@ -25,9 +25,9 @@
      inkscape:document-units="mm"
      inkscape:zoom="2.5799102"
      inkscape:cx="130.6247"
-     inkscape:cy="158.14504"
-     inkscape:window-width="2149"
-     inkscape:window-height="1269"
+     inkscape:cy="158.33884"
+     inkscape:window-width="1626"
+     inkscape:window-height="1190"
      inkscape:window-x="26"
      inkscape:window-y="23"
      inkscape:window-maximized="0"
@@ -74,13 +74,13 @@
     </g>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:12.7px;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';writing-mode:lr-tb;direction:ltr;fill:#666666;fill-opacity:1;stroke-width:0.264583"
+       style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:12.7px;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';writing-mode:lr-tb;direction:ltr;fill:#143e48;fill-opacity:1;stroke-width:0.264583"
        x="8.3934956"
        y="60.030621"
        id="text1"><tspan
          sodipodi:role="line"
          id="tspan1"
-         style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:12.7px;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';fill:#666666;fill-opacity:1;stroke-width:0.264583"
+         style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:12.7px;font-family:Montserrat;-inkscape-font-specification:'Montserrat Semi-Bold';fill:#143e48;fill-opacity:1;stroke-width:0.264583"
          x="8.3934956"
          y="60.030621">MINSEC</tspan></text>
   </g>
