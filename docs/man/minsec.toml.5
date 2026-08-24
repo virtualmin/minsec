@@ -1,4 +1,4 @@
-.TH MINSEC.TOML 5 "" "minsec" "File Formats"
+.TH MINSEC.TOML 5 "2026-08-24" "minsec" "File Formats"
 .SH NAME
 minsec.toml \- minsec daemon configuration and drop-in format
 .SH SYNOPSIS
@@ -82,8 +82,12 @@ capped at
 .BR max .
 History older than
 .B memory
-is forgotten.
+is forgotten; that retention applies even when
+.B escalate_enabled
+is false.
 Members omitted from this inline table receive defaults.
+Ban history is reconstructed at startup from the event log, so escalation
+survives restarts.
 Defaults are factor 2, maximum 1w, and memory 30d.
 .TP
 .BI allow " = [network, ...]"
@@ -120,6 +124,14 @@ with
 or
 .B unban network
 arguments.
+The arguments are appended as positional parameters, so the value may be a
+program path or a shell fragment reading
+.BR $1 ,
+.BR $2 ,
+and
+.BR $3 ;
+see
+.BR minsec (1).
 There is no default.
 .TP
 .BI ipv6_prefix " = integer"
@@ -157,7 +169,9 @@ Default:
 Persistent state directory.
 The event log is stored as
 .I events.jsonl
-below it.
+below it, with one rotated generation
+.I events.jsonl.1
+created when the current file passes 8 MiB.
 Default:
 .IR /var/lib/minsec .
 .SH FILTER TABLES

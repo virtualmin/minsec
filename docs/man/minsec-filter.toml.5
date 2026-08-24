@@ -1,4 +1,4 @@
-.TH MINSEC-FILTER.TOML 5 "" "minsec" "File Formats"
+.TH MINSEC-FILTER.TOML 5 "2026-08-24" "minsec" "File Formats"
 .SH NAME
 minsec-filter.toml \- minsec log-source and matching-filter definition format
 .SH SYNOPSIS
@@ -80,6 +80,9 @@ a parseable address supplies the result and its zero-based pattern number.
 .BI ignore " = [regex, ...]"
 Regular expressions for lines that must not count even when a main pattern
 matches.
+The same token expansion applies, so
+.B <HOST>
+may be used here as well.
 Default: empty.
 .TP
 .BI ports " = [integer, ...]"
@@ -117,7 +120,7 @@ Capture an IPv4 address only.
 Capture an IPv6 address only.
 .TP
 .BI <F- NAME >...< /F-NAME >
-Create a named capture.
+Create a named capture; the name is lowercased.
 .B <F-USER>...</F-USER>
 is returned as the optional username by the matcher.
 Other named captures may be used for expression structure but are not otherwise

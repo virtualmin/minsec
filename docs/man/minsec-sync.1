@@ -1,4 +1,4 @@
-.TH MINSEC-SYNC 1 "" "minsec" "User Commands"
+.TH MINSEC-SYNC 1 "2026-08-24" "minsec" "User Commands"
 .SH NAME
 minsec-sync \- report local minsec bans and maintain the crowd blocklist
 .SH SYNOPSIS
@@ -78,6 +78,9 @@ and
 .B crowd6
 in
 .BR "table inet minsec" .
+It creates that table and those two sets idempotently, so a pull works before
+the daemon has been restarted onto a crowd-aware version; the sets are simply
+unreferenced until then.
 The daemon owns the chains and rules that reference those sets.
 .SS run
 Perform the timer workflow.
@@ -96,7 +99,8 @@ The packaged
 .B minsec-sync.timer
 runs
 .B minsec-sync run
-approximately every five minutes.
+approximately every five minutes: two minutes after boot, then five minutes
+after each run, with up to a minute of randomized delay.
 The service normally runs as the same
 .B minsec
 user as the daemon so it can read the event log and persistent state.
@@ -136,7 +140,9 @@ Enrollment ID, report sequence and event cursor, and feed cursors.
 Packaged example configuration.
 .TP
 .I /usr/lib/systemd/system/minsec-sync.service
-Packaged one-shot service.
+Packaged one-shot service
+.RI ( /lib/systemd/system
+in the Debian package).
 .TP
 .I /usr/lib/systemd/system/minsec-sync.timer
 Packaged periodic timer.

@@ -1,4 +1,4 @@
-.TH MINSEC 1 "" "minsec" "User Commands"
+.TH MINSEC 1 "2026-08-24" "minsec" "User Commands"
 .SH NAME
 minsec \- minimalist log-driven intrusion prevention daemon and control utility
 .SH SYNOPSIS
@@ -43,7 +43,10 @@ For
 .B test
 without
 .BR \-\-quiet ,
-one JSON object is written per matching line.
+one JSON object is written per matching line; with
+.BR \-\-quiet ,
+a single summary object with line, match, and per-address counts is written
+instead.
 .B events
 always emits its stored JSON Lines records.
 .TP
@@ -108,7 +111,13 @@ Ask the running daemon for its version, backend, uptime, counters, and effective
 policy and source type for every enabled filter.
 .SS list
 Ask the running daemon for active local bans and their remaining lifetimes.
-Backends that cannot enumerate bans may return no entries.
+The
+.B nft
+backend is asked for kernel truth.
+The
+.B exec
+backend cannot enumerate bans, so the daemon answers from its own in-memory
+mirror, which only covers bans issued since it started.
 .SS "ban net [--ttl duration]"
 Manually ban an IP address or CIDR network.
 Host addresses are normalized to a /32 or /128 and CIDRs are truncated to their
@@ -147,10 +156,14 @@ applies.
 .SS "events [-n count]"
 Print the last
 .I count
-records from
-.IR events.jsonl ,
-oldest first.
+records from the event log, oldest first.
 The default is 50.
+The log is
+.I events.jsonl
+in the state directory together with the single rotated generation
+.IR events.jsonl.1 ,
+which the daemon creates when the current file passes 8 MiB; both are read and
+older records are gone.
 Records are emitted as JSON Lines and include daemon start/stop, automatic and
 manual ban, and unban events.
 .SH DURATION SYNTAX
@@ -201,13 +214,29 @@ unban net
 .fi
 .PP
 The configured string is evaluated by
-.BR /bin/sh " " \-c .
+.BR /bin/sh " " \-c ,
+and the arguments above are appended as positional parameters instead of being
+substituted into the text.
+The child process is equivalent to:
+.PP
+.nf
+/bin/sh \-c 'exec_command "$@"' minsec setup
+.fi
+.PP
+A command may therefore be a script or program path, or a shell fragment that
+reads
+.BR $1 ,
+.BR $2 ,
+and
+.BR $3 .
 It must be trusted configuration.
 This backend does not enumerate active bans or install an allow set; the daemon
 still refuses to issue a ban for a network overlapping its allow list.
 .SH CONTROL SOCKET
 Online commands use the socket configured by
 .BR paths.socket .
+The daemon creates it with mode 0660 owned by the user and group it runs as, so
+online commands must run as root or as a member of that group.
 The protocol is newline-delimited JSON: one request and one response per line.
 Supported request command names include
 .BR ping ,
@@ -248,8 +277,13 @@ Default control socket.
 .I /var/lib/minsec/events.jsonl
 Persistent event log.
 .TP
+.I /var/lib/minsec/events.jsonl.1
+Previous generation of the event log.
+.TP
 .I /usr/lib/systemd/system/minsec.service
-Packaged systemd service unit.
+Packaged systemd service unit
+.RI ( /lib/systemd/system/minsec.service
+in the Debian package).
 .SH EXIT STATUS
 Returns 0 when the requested operation succeeds and 1 for configuration,
 filter, control-socket, backend, or other operational errors.

@@ -1,4 +1,4 @@
-.TH MINSEC-SYNC.TOML 5 "" "minsec" "File Formats"
+.TH MINSEC-SYNC.TOML 5 "2026-08-24" "minsec" "File Formats"
 .SH NAME
 minsec-sync.toml \- minsec multiplayer client configuration
 .SH SYNOPSIS
@@ -118,7 +118,8 @@ Pull operations manage only the
 and
 .B crowd6
 sets in
-.BR "table inet minsec" .
+.BR "table inet minsec" ,
+creating the table and the sets themselves if they do not yet exist.
 Setting
 .B ipv4
 or

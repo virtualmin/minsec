@@ -374,7 +374,7 @@ fn set_enabled(dir: &std::path::Path, name: &str, enabled: bool) -> anyhow::Resu
         .insert("enabled".into(), toml::Value::Boolean(enabled));
     std::fs::write(&path, toml::to_string(&table)?)?;
     println!(
-        "{} {name} ({}); reload or restart minsec to apply",
+        "{} {name} ({}); restart minsec to apply",
         if enabled { "enabled" } else { "disabled" },
         path.display()
     );
