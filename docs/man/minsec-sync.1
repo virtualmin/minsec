@@ -1,0 +1,168 @@
+.TH MINSEC-SYNC 1 "" "minsec" "User Commands"
+.SH NAME
+minsec-sync \- report local minsec bans and maintain the crowd blocklist
+.SH SYNOPSIS
+.B minsec-sync
+.RI [ options ]
+.I command
+.SH DESCRIPTION
+.B minsec-sync
+is the opt-in multiplayer client for
+.BR minsec (1).
+It is a short-lived program intended to run periodically from a systemd timer.
+It enrolls the host, reports new automatic bans from the daemon event log, and
+loads a selected crowd blocklist into the dedicated nftables
+.B crowd4
+and
+.B crowd6
+sets.
+.PP
+The resident daemon contains no HTTP or TLS client.
+Network activity and private signing-key management are isolated in this
+helper.
+Creating
+.I /etc/minsec/sync.toml
+is the opt-in switch used by the packaged timer.
+.SH OPTIONS
+.TP
+.BR \-c " " \fIfile\fR ", " \-\-config " " \fIfile\fR
+Read configuration from
+.I file
+instead of
+.IR /etc/minsec/sync.toml .
+.TP
+.B \-\-dry-run
+Print nftables scripts instead of passing them to
+.BR nft (8).
+This option only suppresses nftables changes.
+It does not suppress HTTP requests, enrollment, reporting, key creation, or
+state-file updates; a successful pull also advances its saved feed cursor.
+.TP
+.BR \-h ", " \-\-help
+Show help and exit.
+.TP
+.BR \-V ", " \-\-version
+Show the program version and exit.
+.SH COMMANDS
+.SS enroll
+Create an Ed25519 signing key if necessary, solve the server's enrollment
+proof-of-work challenge, and save the assigned host ID.
+If this state is already present, print the existing host ID and return.
+.PP
+If the local host ID was lost but the server already knows the signing key,
+the key is moved to
+.I key.old
+and enrollment is retried once with a new key.
+.SS report
+Read new automatic ban events from the configured minsec event log and submit
+signed report batches.
+The saved file cursor advances only after all batches succeed.
+Manual bans are never reported.
+Old or malformed events and networks broader than the reporting limits are
+skipped.
+.PP
+Reports contain the attacker network, event time, filter/category, hit count,
+and ban lifetime.
+They do not contain log lines, usernames, or local user information.
+IPv6 host addresses and prefixes narrower than /64 are aggregated to /64.
+.SS pull
+Fetch enabled IPv4 and IPv6 feeds for the configured tier, using saved ETags
+and snapshot cursors when possible.
+Full feeds atomically replace the corresponding set; delta feeds add and remove
+individual entries.
+If a delta cannot be applied, a full feed is fetched and installed.
+.PP
+This command manages only
+.B crowd4
+and
+.B crowd6
+in
+.BR "table inet minsec" .
+The daemon owns the chains and rules that reference those sets.
+.SS run
+Perform the timer workflow.
+Enroll first if necessary, then report and/or pull according to configuration.
+If the configuration file does not exist, exit successfully without output or
+side effects.
+This absent-file behavior is specific to
+.BR run ;
+the other commands report an error.
+.SS status
+Print the configured server, public key, enrollment host ID, next report
+sequence number, event-log cursor, and saved feed state.
+A private key is generated if one does not already exist.
+.SH OPERATION
+The packaged
+.B minsec-sync.timer
+runs
+.B minsec-sync run
+approximately every five minutes.
+The service normally runs as the same
+.B minsec
+user as the daemon so it can read the event log and persistent state.
+Pulling requires permission to execute
+.BR nft (8)
+and administer nftables, normally
+.BR CAP_NET_ADMIN .
+Enrollment, reporting, and pulling require HTTPS access to the configured
+server and a usable CA trust store.
+.PP
+Disabling reporting or pulling does not remove existing crowd set entries.
+To opt out completely, remove the sync configuration, stop or disable the
+timer, and flush both crowd sets if immediate removal is desired:
+.PP
+.nf
+nft flush set inet minsec crowd4
+nft flush set inet minsec crowd6
+.fi
+.SH FILES
+.TP
+.I /etc/minsec/sync.toml
+Multiplayer configuration and opt-in marker.
+.TP
+.I /var/lib/minsec/events.jsonl
+Default source of automatic ban events.
+.TP
+.I /var/lib/minsec/sync/key
+Ed25519 private signing seed, created with mode 0600.
+.TP
+.I /var/lib/minsec/sync/key.old
+Previous key retained after automatic recovery from lost enrollment state.
+.TP
+.I /var/lib/minsec/sync/state.json
+Enrollment ID, report sequence and event cursor, and feed cursors.
+.TP
+.I /usr/share/doc/minsec/sync.toml.example
+Packaged example configuration.
+.TP
+.I /usr/lib/systemd/system/minsec-sync.service
+Packaged one-shot service.
+.TP
+.I /usr/lib/systemd/system/minsec-sync.timer
+Packaged periodic timer.
+.SH EXIT STATUS
+Returns 0 when the requested operation succeeds.
+.B run
+also returns 0 when its configuration file is absent.
+Configuration, state, network, server, feed, and nftables failures return 1.
+.SH EXAMPLES
+Opt in using the package example and test feed application visibly:
+.PP
+.nf
+install -m 0644 /usr/share/doc/minsec/sync.toml.example /etc/minsec/sync.toml
+minsec-sync enroll
+minsec-sync --dry-run pull
+systemctl enable --now minsec-sync.timer
+.fi
+.PP
+Inspect client state:
+.PP
+.nf
+minsec-sync status
+.fi
+.SH SEE ALSO
+.BR minsec (1),
+.BR minsec-sync.toml (5),
+.BR minsec.toml (5),
+.BR nft (8),
+.BR systemd.timer (5)

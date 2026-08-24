@@ -1,0 +1,197 @@
+.TH MINSEC-FILTER.TOML 5 "" "minsec" "File Formats"
+.SH NAME
+minsec-filter.toml \- minsec log-source and matching-filter definition format
+.SH SYNOPSIS
+.I /etc/minsec/filters/name.toml
+.SH DESCRIPTION
+A filter definition selects log sources and describes lines that count as
+failures for
+.BR minsec (1).
+Definitions are TOML files with top-level keys.
+Unknown keys are errors.
+.PP
+Custom files are discovered by filename stem.
+A custom
+.I filters/name.toml
+completely replaces the embedded filter named
+.IR name ;
+filter definitions are not merged.
+The
+.B [filters.name]
+table in
+.BR minsec.toml (5)
+can then enable the filter and replace its files, journal selector, ports, or
+retry policy.
+.SH KEYS
+.TP
+.BI name " = string"
+Filter name recorded in status and event records.
+This key is required.
+For predictable lookup and reporting, it should match the filename stem and
+contain only lowercase letters, digits,
+.BR . ,
+.BR _ ,
+and
+.BR \- .
+.TP
+.BI description " = string"
+Short description displayed by
+.BR "minsec filters" .
+Default: empty.
+.TP
+.BI files " = [path-pattern, ...]"
+Log files to follow when this filter does not use the journal.
+Shell-style glob patterns are accepted.
+Existing files are normally opened at end of file; missing paths are watched
+for creation.
+Default: empty.
+.TP
+.BI journal " = { units = [...], identifiers = [...], comm = [...] }"
+Journal selectors.
+.B units
+match
+.BR _SYSTEMD_UNIT ,
+.B identifiers
+match
+.BR SYSLOG_IDENTIFIER ,
+and
+.B comm
+matches
+.BR _COMM .
+Every array entry is an alternative: a record matching any configured entry is
+routed to the filter.
+All arrays default to empty.
+.TP
+.BI prefilter " = [literal, ...]"
+Case-sensitive literal substrings used as a cheap check before regular
+expression matching.
+A file line proceeds if any literal is present.
+Prefilters are skipped for journal records, whose metadata already routes them
+and whose message omits a traditional syslog prefix.
+Default: empty, which disables the check.
+.TP
+.BI patterns " = [regex, ...]"
+Required list of regular expressions describing failure lines.
+Each expression must contain an address token such as
+.BR <HOST> .
+Patterns are tried as one ordered alternation; the first matching pattern with
+a parseable address supplies the result and its zero-based pattern number.
+.TP
+.BI ignore " = [regex, ...]"
+Regular expressions for lines that must not count even when a main pattern
+matches.
+Default: empty.
+.TP
+.BI ports " = [integer, ...]"
+Service-port metadata carried into effective policy and inspection output.
+Default: empty.
+The current nft backend drops banned sources on all ports, so this list does
+not restrict its rules.
+.SH PATTERN LANGUAGE
+Patterns use the Rust
+.B regex
+syntax.
+They are case-sensitive unless the expression changes flags and are searched
+anywhere in the line unless explicitly anchored with
+.B ^
+or
+.BR $ .
+Look-around and backreferences are not supported.
+.PP
+TOML literal strings in single quotes are convenient for patterns because a
+backslash is preserved without TOML escaping:
+.PP
+.nf
+patterns = ['failed from <HOST> port \ed+']
+.fi
+.PP
+The following fail2ban-style tokens are expanded before compilation:
+.TP
+.BR <HOST> ", " <ADDR> ", " <IP>
+Capture an IPv4 or IPv6 address.
+.TP
+.B <IP4>
+Capture an IPv4 address only.
+.TP
+.B <IP6>
+Capture an IPv6 address only.
+.TP
+.BI <F- NAME >...< /F-NAME >
+Create a named capture.
+.B <F-USER>...</F-USER>
+is returned as the optional username by the matcher.
+Other named captures may be used for expression structure but are not otherwise
+consumed by the current engine.
+.PP
+The Perl-style classes
+.BR \ed ,
+.BR \eD ,
+.BR \es ,
+.BR \eS ,
+.BR \ew ,
+and
+.B \eW
+are rewritten to ASCII-only classes.
+Captured addresses are parsed after matching, so syntactically matching but
+invalid addresses such as an IPv4 octet over 255 are rejected.
+.SH SOURCE BEHAVIOR
+For each enabled filter, minsec chooses the journal when all of these are true:
+global journal use is enabled, journal support is available, and the definition
+has at least one journal selector.
+Otherwise minsec follows the filter's files.
+It does not consume both source types for the same filter.
+.PP
+Journal unit metadata is trusted directly.
+Identifier and command selectors are honored only for records whose sender UID
+is a system account (UID 0 through 999), preventing unprivileged use of
+.BR logger (1)
+from spoofing service messages.
+.SH BUILT-IN FILTERS
+The binary embeds these definitions:
+.PP
+.nf
+apache-auth    dovecot       nginx-auth     postfix
+postfix-sasl   proftpd       roundcube      sshd
+webmin         wordpress
+.fi
+.PP
+Use
+.B minsec filters
+for descriptions and the installed binary's authoritative list.
+.SH EXAMPLE
+.nf
+name = "myapp"
+description = "My application login failures"
+files = ["/var/log/myapp.log"]
+journal = { identifiers = ["myapp"] }
+prefilter = ["login failed"]
+ports = [8443]
+patterns = [
+  'login failed for <F-USER>\eS+</F-USER> from <HOST>',
+]
+ignore = [
+  'health-check account',
+]
+.fi
+.PP
+Enable and test it with:
+.PP
+.nf
+minsec enable myapp
+minsec check --all
+minsec test myapp /var/log/myapp.log
+.fi
+.SH FILES
+.TP
+.I /etc/minsec/filters/*.toml
+Custom definitions and built-in replacements.
+.TP
+.I /etc/minsec/minsec.toml
+Policy and enablement configuration.
+.TP
+.I /etc/minsec/conf.d/*.toml
+Policy and enablement drop-ins.
+.SH SEE ALSO
+.BR minsec (1),
+.BR minsec.toml (5),
+.BR regex (7)

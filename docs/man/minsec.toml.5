@@ -1,0 +1,280 @@
+.TH MINSEC.TOML 5 "" "minsec" "File Formats"
+.SH NAME
+minsec.toml \- minsec daemon configuration and drop-in format
+.SH SYNOPSIS
+.I /etc/minsec/minsec.toml
+.br
+.I /etc/minsec/conf.d/*.toml
+.SH DESCRIPTION
+These TOML files configure the
+.BR minsec (1)
+daemon and its per-filter policy.
+The main file is optional; an absent file produces the built-in defaults with
+no filters enabled.
+.PP
+After reading
+.IR minsec.toml ,
+minsec reads regular files ending in
+.B .toml
+from
+.I conf.d
+in lexical pathname order.
+Tables are merged recursively.
+A later scalar, array, or other non-table value replaces the earlier value.
+This makes a small drop-in sufficient to override one setting.
+.PP
+Unknown keys at every documented table level are errors.
+Run
+.B minsec check --all
+after editing and restart the daemon to apply changes.
+There is no live configuration reload.
+.SH DURATION VALUES
+A duration may be a TOML string containing bare seconds or concatenated
+integer/unit pairs, or a TOML integer number of seconds.
+Supported units are
+.BR s ,
+.BR m ,
+.BR h ,
+.BR d ,
+and
+.BR w .
+Examples include
+.BR "\(dq30\(dq" ,
+.BR "\(dq10m\(dq" ,
+.BR "\(dq1h30m\(dq" ,
+and
+.BR "\(dq2d\(dq" .
+.SH DEFAULTS TABLE
+The
+.B [defaults]
+table sets global policy.
+.TP
+.BI bantime " = duration"
+Initial automatic and default manual ban lifetime.
+Default:
+.BR 1h .
+.TP
+.BI findtime " = duration"
+Window in which failures count toward
+.BR maxretry .
+It must be greater than zero.
+Default:
+.BR 10m .
+.TP
+.BI maxretry " = integer"
+Failures from the same network in the same filter and
+.B findtime
+window that trigger a ban.
+The value must be from 1 through 32.
+Default: 5.
+.TP
+.BI escalate_enabled " = boolean"
+Enable increasing lifetimes for repeat automatic bans.
+Default:
+.BR true .
+.TP
+.BI escalate " = { factor = integer, max = duration, memory = duration }"
+Repeat-offender policy.
+Each previous automatic ban still in history multiplies the base ban lifetime
+by
+.BR factor ,
+capped at
+.BR max .
+History older than
+.B memory
+is forgotten.
+Members omitted from this inline table receive defaults.
+Defaults are factor 2, maximum 1w, and memory 30d.
+.TP
+.BI allow " = [network, ...]"
+IP addresses or CIDR networks that must never be banned.
+TOML values are strings, for example
+.BR [\(dq203.0.113.0/24\(dq] .
+Loopback, unspecified, and addresses currently assigned to the local host are
+also protected.
+A candidate IPv6 aggregate is rejected if it overlaps an allowed network.
+Default: empty.
+.TP
+.BI backend " = \(dqnft\(dq | \(dqnull\(dq | \(dqexec\(dq"
+Firewall backend.
+.B nft
+maintains the project's nftables table,
+.B null
+makes no firewall changes, and
+.B exec
+invokes an operator-provided command.
+Default:
+.BR nft .
+.TP
+.BI exec_command " = string"
+Trusted shell command used by the
+.B exec
+backend.
+It is required when
+.B backend = \(dqexec\(dq
+and is invoked through
+.B /bin/sh -c
+with
+.BR setup ,
+.BR "ban network ttl-seconds" ,
+or
+.B unban network
+arguments.
+There is no default.
+.TP
+.BI ipv6_prefix " = integer"
+Prefix length used to aggregate IPv6 addresses for tracking and banning.
+It must be from 1 through 128.
+For example, the default 64 tracks and bans one /64 rather than each /128.
+IPv4 addresses are tracked as /32.
+.TP
+.BI max_tracked " = integer"
+Approximate upper bound for in-memory failure trackers and escalation-history
+entries.
+Idle or oldest tracking entries are discarded as needed; active firewall bans
+are not discarded merely to meet this bound.
+Default: 50000.
+.TP
+.BI journal " = boolean"
+Prefer the systemd journal for filters that define journal selectors when
+journal support is available.
+If selected for a filter, journal input is used instead of that filter's file
+list to avoid double counting.
+If disabled or unavailable, the file list is used.
+Default:
+.BR true .
+.SH PATHS TABLE
+The
+.B [paths]
+table selects runtime and persistent locations.
+.TP
+.BI socket " = path"
+Unix-domain control socket.
+Default:
+.IR /run/minsec/minsec.sock .
+.TP
+.BI state_dir " = path"
+Persistent state directory.
+The event log is stored as
+.I events.jsonl
+below it.
+Default:
+.IR /var/lib/minsec .
+.SH FILTER TABLES
+Each
+.B [filters.name]
+table enables a built-in or custom filter and may override its policy or input
+definition.
+The table name is the filter lookup name.
+.TP
+.BI enabled " = boolean"
+Load the filter into the running engine.
+Default:
+.BR false .
+.TP
+.BI bantime " = duration"
+Override
+.B defaults.bantime
+for this filter.
+.TP
+.BI findtime " = duration"
+Override
+.B defaults.findtime
+for this filter.
+.TP
+.BI maxretry " = integer"
+Override
+.B defaults.maxretry
+for this filter.
+The value must be from 1 through 32.
+.TP
+.BI files " = [path-pattern, ...]"
+Replace the filter definition's complete file list.
+Shell-style glob patterns are supported.
+.TP
+.BI journal " = { units = [...], identifiers = [...], comm = [...] }"
+Replace the filter definition's complete journal selector.
+All member arrays default to empty; selector entries are alternatives, not a
+conjunction.
+.TP
+.BI ports " = [integer, ...]"
+Replace the service-port metadata from the filter definition.
+The value appears in effective inspection policy.
+The current nft backend bans source networks on all ports; this setting does
+not restrict its drop rules.
+.SH SOURCE SELECTION
+When journal input is enabled, available, and the filter has a nonempty
+selector, only journal input is configured for that filter.
+Otherwise its files are followed.
+Journal
+.B units
+match
+.BR _SYSTEMD_UNIT ;
+.B identifiers
+match
+.BR SYSLOG_IDENTIFIER ;
+and
+.B comm
+matches
+.BR _COMM .
+Unit matches are accepted directly because journald derives them from cgroup
+provenance.
+Identifier and command matches are accepted only for records from a system UID
+(0 through 999), because those fields can otherwise be forged by local users.
+.SH DROP-INS
+A typical drop-in enables one filter and changes one policy value:
+.PP
+.nf
+[filters.sshd]
+enabled = true
+maxretry = 3
+.fi
+.PP
+.B minsec enable sshd
+and
+.B minsec disable sshd
+maintain
+.I conf.d/sshd.toml
+in this form.
+Because drop-ins are lexically ordered, use numeric prefixes when several
+administrator-managed files may override the same key.
+.SH EXAMPLE
+.nf
+[defaults]
+bantime = "1h"
+findtime = "10m"
+maxretry = 5
+backend = "nft"
+escalate = { factor = 2, max = "1w", memory = "30d" }
+allow = ["203.0.113.0/24"]
+ipv6_prefix = 64
+journal = true
+
+[paths]
+socket = "/run/minsec/minsec.sock"
+state_dir = "/var/lib/minsec"
+
+[filters.sshd]
+enabled = true
+maxretry = 3
+
+[filters.wordpress]
+enabled = true
+files = ["/var/log/virtualmin/*_access_log"]
+.fi
+.SH FILES
+.TP
+.I /etc/minsec/minsec.toml
+Main configuration.
+.TP
+.I /etc/minsec/conf.d/*.toml
+Lexically ordered drop-ins using this same format.
+.TP
+.I /etc/minsec/filters/*.toml
+Custom filter definitions, documented in
+.BR minsec-filter.toml (5).
+.SH SEE ALSO
+.BR minsec (1),
+.BR minsec-filter.toml (5),
+.BR minsec-sync.toml (5),
+.BR nft (8)

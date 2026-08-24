@@ -1,0 +1,162 @@
+.TH MINSEC-SYNC.TOML 5 "" "minsec" "File Formats"
+.SH NAME
+minsec-sync.toml \- minsec multiplayer client configuration
+.SH SYNOPSIS
+.I /etc/minsec/sync.toml
+.SH DESCRIPTION
+This TOML file configures
+.BR minsec-sync (1).
+Its existence is the packaged service's multiplayer opt-in switch.
+When it is absent,
+.B minsec-sync run
+exits successfully without enrollment, network access, key creation, reporting,
+or firewall changes.
+Other subcommands treat an absent file as an error.
+.PP
+Every key is optional and has a default.
+An empty file therefore opts in with all standard behavior enabled.
+Unknown keys are errors.
+Unlike the daemon configuration, this file has no drop-in directory and no
+table sections.
+.SH KEYS
+.TP
+.BI server " = URL"
+Base URL for enrollment, report, and feed endpoints.
+The value must begin with
+.B http://
+or
+.BR https:// .
+Production deployments should use HTTPS.
+Trailing slashes are ignored.
+Default:
+.IR https://api.minsec.io .
+.TP
+.BI tier " = \(dqbasic\(dq | \(dqhigh\(dq"
+Crowd-feed tier.
+.B basic
+uses the basic feed policy;
+.B high
+selects the stricter high-confidence feed.
+Default:
+.BR basic .
+.TP
+.BI report " = boolean"
+When true,
+.B minsec-sync run
+submits new automatic local bans.
+This flag does not disable an explicitly invoked
+.B minsec-sync report
+command.
+Default:
+.BR true .
+.TP
+.BI pull " = boolean"
+When true,
+.B minsec-sync run
+fetches and applies crowd feeds.
+This flag does not disable an explicitly invoked
+.B minsec-sync pull
+command.
+Default:
+.BR true .
+.TP
+.BI ipv4 " = boolean"
+Fetch and maintain the IPv4
+.B crowd4
+set during a pull.
+Default:
+.BR true .
+.TP
+.BI ipv6 " = boolean"
+Fetch and maintain the IPv6
+.B crowd6
+set during a pull.
+Default:
+.BR true .
+.TP
+.BI state_dir " = path"
+Directory containing the private signing key and client state.
+It is created when needed.
+Default:
+.IR /var/lib/minsec/sync .
+.TP
+.BI events " = path"
+Daemon JSON Lines event log read by the report operation.
+Only automatic ban records are submitted.
+Default:
+.IR /var/lib/minsec/events.jsonl .
+.TP
+.BI nft " = path-or-command"
+nftables executable used to manage crowd sets.
+The value is executed directly, not through a shell.
+Default:
+.BR nft .
+.SH REPORTING AND PRIVACY
+Reporting reads complete, newline-terminated automatic ban events beyond the
+saved inode and byte-offset cursor.
+It submits the attacker network, event timestamp, filter/category, hit count,
+and ban lifetime.
+It does not submit log text, usernames, or local user data.
+Manual bans are skipped.
+.PP
+IPv4 reports must be /24 or narrower.
+IPv6 reports must be /48 or narrower; networks narrower than /64, including
+host /128s, are aggregated to /64.
+Events older than approximately 23 hours, implausibly future events, malformed
+networks, and invalid filter names are skipped.
+.SH STATE AND FIREWALL
+The state directory contains
+.B key
+(a 32-byte Ed25519 signing seed created with mode 0600) and
+.B state.json
+(enrollment, event, sequence, and feed cursors).
+State updates use a temporary file followed by rename.
+Protect this directory and preserve it across upgrades.
+.PP
+Pull operations manage only the
+.B crowd4
+and
+.B crowd6
+sets in
+.BR "table inet minsec" .
+Setting
+.B ipv4
+or
+.B ipv6
+to false stops updates for that family but does not flush existing elements.
+Setting
+.B pull
+to false has the same persistence property.
+.SH EXAMPLE
+.nf
+server = "https://api.minsec.io"
+tier = "basic"
+report = true
+pull = true
+ipv4 = true
+ipv6 = true
+state_dir = "/var/lib/minsec/sync"
+events = "/var/lib/minsec/events.jsonl"
+nft = "nft"
+.fi
+.SH FILES
+.TP
+.I /etc/minsec/sync.toml
+Configuration and opt-in marker.
+.TP
+.I /usr/share/doc/minsec/sync.toml.example
+Packaged example with default values and opt-out guidance.
+.TP
+.I /var/lib/minsec/sync/key
+Default private signing-key path.
+.TP
+.I /var/lib/minsec/sync/state.json
+Default client-state path.
+.TP
+.I /var/lib/minsec/events.jsonl
+Default event-log input.
+.SH SEE ALSO
+.BR minsec-sync (1),
+.BR minsec (1),
+.BR minsec.toml (5),
+.BR nft (8)
