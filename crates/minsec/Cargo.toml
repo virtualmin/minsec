@@ -28,8 +28,8 @@ ipnet.workspace = true
 # architecture serves EL8+ and Debian 11+/Ubuntu 22.04+.
 
 [package.metadata.deb]
-maintainer = "Virtualmin <support@virtualmin.com>"
-copyright = "Virtualmin, Inc."
+maintainer = "Joe Cooper <swelljoe@gmail.com>"
+copyright = "©2026 Joe Cooper"
 license-file = ["../../LICENSE", "0"]
 extended-description = """\
 minsec watches log files and the systemd journal for authentication failures \
@@ -51,6 +51,11 @@ assets = [
   ["../../packaging/minsec-sync.timer", "lib/systemd/system/minsec-sync.timer", "644"],
   ["../../packaging/minsec.sysusers.conf", "usr/lib/sysusers.d/minsec.conf", "644"],
   ["../../packaging/minsec.tmpfiles.conf", "usr/lib/tmpfiles.d/minsec.conf", "644"],
+  ["../../docs/man/minsec.1", "usr/share/man/man1/minsec.1", "644"],
+  ["../../docs/man/minsec-sync.1", "usr/share/man/man1/minsec-sync.1", "644"],
+  ["../../docs/man/minsec.toml.5", "usr/share/man/man5/minsec.toml.5", "644"],
+  ["../../docs/man/minsec-filter.toml.5", "usr/share/man/man5/minsec-filter.toml.5", "644"],
+  ["../../docs/man/minsec-sync.toml.5", "usr/share/man/man5/minsec-sync.toml.5", "644"],
   ["../../packaging/sync.toml", "usr/share/doc/minsec/sync.toml.example", "644"],
   ["../../README.md", "usr/share/doc/minsec/README.md", "644"],
   ["../../docs/PLAN.md", "usr/share/doc/minsec/PLAN.md", "644"],
@@ -62,7 +67,7 @@ maintainer-scripts = "../../packaging/deb"
 [package.metadata.generate-rpm]
 license = "GPL-3.0-or-later"
 summary = "Minimalist security daemon: a tiny, fast, intrusion prevention system"
-url = "https://github.com/virtualmin/minsec"
+url = "https://github.com/minsecio/minsec"
 vendor = "Virtualmin, Inc."
 post_install_script = "../../packaging/rpm/post.sh"
 pre_uninstall_script = "../../packaging/rpm/preun.sh"
@@ -76,6 +81,11 @@ assets = [
   { source = "packaging/minsec-sync.timer", dest = "/usr/lib/systemd/system/minsec-sync.timer", mode = "644" },
   { source = "packaging/minsec.sysusers.conf", dest = "/usr/lib/sysusers.d/minsec.conf", mode = "644" },
   { source = "packaging/minsec.tmpfiles.conf", dest = "/usr/lib/tmpfiles.d/minsec.conf", mode = "644" },
+  { source = "docs/man/minsec.1", dest = "/usr/share/man/man1/minsec.1", mode = "644", doc = true },
+  { source = "docs/man/minsec-sync.1", dest = "/usr/share/man/man1/minsec-sync.1", mode = "644", doc = true },
+  { source = "docs/man/minsec.toml.5", dest = "/usr/share/man/man5/minsec.toml.5", mode = "644", doc = true },
+  { source = "docs/man/minsec-filter.toml.5", dest = "/usr/share/man/man5/minsec-filter.toml.5", mode = "644", doc = true },
+  { source = "docs/man/minsec-sync.toml.5", dest = "/usr/share/man/man5/minsec-sync.toml.5", mode = "644", doc = true },
   { source = "packaging/sync.toml", dest = "/usr/share/doc/minsec/sync.toml.example", mode = "644", doc = true },
   { source = "README.md", dest = "/usr/share/doc/minsec/README.md", mode = "644", doc = true },
   { source = "docs/PLAN.md", dest = "/usr/share/doc/minsec/PLAN.md", mode = "644", doc = true },

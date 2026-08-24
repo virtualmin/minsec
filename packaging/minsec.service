@@ -1,6 +1,6 @@
 [Unit]
 Description=minsec - minimalist security daemon
-Documentation=https://github.com/virtualmin/minsec
+Documentation=man:minsec(1) man:minsec.toml(5) https://github.com/minsecio/minsec
 After=network-online.target nftables.service firewalld.service
 Wants=network-online.target
 

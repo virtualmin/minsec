@@ -38,6 +38,9 @@ Early. The core works end to end against real nftables (see
 cargo build --release
 sudo install -m 0755 target/release/minsec /usr/bin/minsec
 sudo install -d /etc/minsec && sudo install -m 0644 packaging/minsec.toml /etc/minsec/
+sudo install -d /usr/share/man/man1 /usr/share/man/man5
+sudo install -m 0644 docs/man/*.1 /usr/share/man/man1/
+sudo install -m 0644 docs/man/*.5 /usr/share/man/man5/
 sudo install -m 0644 packaging/minsec.service /etc/systemd/system/
 sudo install -m 0644 packaging/minsec.sysusers.conf /usr/lib/sysusers.d/minsec.conf
 sudo install -m 0644 packaging/minsec.tmpfiles.conf /usr/lib/tmpfiles.d/minsec.conf
@@ -109,6 +112,10 @@ ASCII.
 Add `--json` to any command for machine-readable output; the same JSON is
 available directly on the control socket (`/run/minsec/minsec.sock`,
 newline-delimited requests such as `{"cmd":"status"}`).
+
+Complete command and configuration references are installed as
+`minsec(1)`, `minsec-sync(1)`, `minsec.toml(5)`,
+`minsec-filter.toml(5)`, and `minsec-sync.toml(5)`.
 
 ## Firewall
 

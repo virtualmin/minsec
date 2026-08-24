@@ -1,6 +1,6 @@
 [Unit]
 Description=minsec multiplayer sync (report bans, pull crowd blocklist)
-Documentation=https://github.com/virtualmin/minsec
+Documentation=man:minsec-sync(1) man:minsec-sync.toml(5) https://github.com/minsecio/minsec
 After=network-online.target minsec.service
 Wants=network-online.target
 

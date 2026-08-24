@@ -1,0 +1,287 @@
+.TH MINSEC 1 "" "minsec" "User Commands"
+.SH NAME
+minsec \- minimalist log-driven intrusion prevention daemon and control utility
+.SH SYNOPSIS
+.B minsec
+.RI [ options ]
+.I command
+.RI [ command-options ]
+.SH DESCRIPTION
+.B minsec
+watches selected log files or the systemd journal for authentication failures
+and other abuse.
+It tracks failures by filter and source network, then asks a configured backend
+to ban sources that reach the retry threshold within the configured time window.
+.PP
+The default
+.B nft
+backend maintains the
+.B inet minsec
+nftables table.
+Ban expiration is implemented by nftables set timeouts, so active bans survive
+daemon restarts and expire without daemon intervention.
+.PP
+The same binary provides the foreground daemon, offline configuration and
+filter inspection commands, and commands that communicate with the running
+daemon through a Unix-domain control socket.
+.SH GLOBAL OPTIONS
+.TP
+.BR \-c " " \fIdirectory\fR ", " \-\-config-dir " " \fIdirectory\fR
+Use
+.I directory
+as the configuration directory instead of
+.IR /etc/minsec .
+The directory contains
+.IR minsec.toml ,
+.IR conf.d/ ,
+and
+.IR filters/ .
+.TP
+.B \-\-json
+Request machine-readable JSON from commands that support it.
+For
+.B test
+without
+.BR \-\-quiet ,
+one JSON object is written per matching line.
+.B events
+always emits its stored JSON Lines records.
+.TP
+.BR \-h ", " \-\-help
+Show help and exit.
+.TP
+.BR \-V ", " \-\-version
+Show the program version and exit.
+.SH COMMANDS
+.SS "daemon [--backend backend] [--replay]"
+Run the daemon in the foreground.
+The backend override may be
+.BR nft ,
+.BR null ,
+or
+.BR exec .
+It changes the loaded configuration only for this process.
+The
+.B null
+backend records what the engine would do without changing the firewall.
+.PP
+File sources normally start at end of file.
+.B \-\-replay
+starts existing file sources at the beginning.
+Journal input continues from the journal follower's normal starting point.
+.SS "check [--all]"
+Load and validate the merged configuration and compile filters.
+By default only enabled filters are compiled.
+.B \-\-all
+also compiles every discovered built-in and custom filter, including disabled
+custom filters.
+This command is offline and is suitable for checking changes before a restart.
+.SS inspect
+Inspect the merged configuration, discovered files and filters, and effective
+per-filter policy.
+Human-readable output is a short summary; use
+.B \-\-json
+for the complete, versioned inspection document.
+This command is offline.
+.SS "test filter [file] [--quiet]"
+Compile
+.I filter
+and run it against
+.IR file .
+If
+.I file
+is omitted or is
+.BR \- ,
+read standard input.
+By default each match shows the extracted address, pattern number, and input
+line, followed by a summary on standard error.
+.B \-q
+or
+.B \-\-quiet
+suppresses individual matches and prints per-address totals instead.
+.PP
+This command tests textual matching only.
+It does not apply retry thresholds, allow lists, IPv6 prefix aggregation,
+escalation, or firewall actions.
+.SS status
+Ask the running daemon for its version, backend, uptime, counters, and effective
+policy and source type for every enabled filter.
+.SS list
+Ask the running daemon for active local bans and their remaining lifetimes.
+Backends that cannot enumerate bans may return no entries.
+.SS "ban net [--ttl duration]"
+Manually ban an IP address or CIDR network.
+Host addresses are normalized to a /32 or /128 and CIDRs are truncated to their
+network address.
+Without
+.BR \-\-ttl ,
+the configured default
+.B bantime
+is used.
+The daemon refuses networks that overlap its effective allow list.
+Manual bans are not used as multiplayer reports.
+.SS "unban net"
+Remove an address or network from the local ban backend and forget its current
+per-filter retry state.
+.SS filters
+List embedded filters and custom
+.I filters/*.toml
+definitions.
+An asterisk marks an enabled filter.
+.SS "enable name"
+Validate that the filter exists and set
+.B enabled = true
+in
+.IR conf.d/name.toml .
+Existing settings in that drop-in are preserved.
+Restart the service to apply the change; the daemon does not live-reload
+configuration.
+.SS "disable name"
+Set
+.B enabled = false
+in
+.IR conf.d/name.toml .
+The same restart requirement as
+.B enable
+applies.
+.SS "events [-n count]"
+Print the last
+.I count
+records from
+.IR events.jsonl ,
+oldest first.
+The default is 50.
+Records are emitted as JSON Lines and include daemon start/stop, automatic and
+manual ban, and unban events.
+.SH DURATION SYNTAX
+Durations may be bare seconds or one or more integer/unit pairs.
+Units are
+.BR s ,
+.BR m ,
+.BR h ,
+.BR d ,
+and
+.BR w .
+Examples are
+.BR 30 ,
+.BR 10m ,
+.BR 1h30m ,
+and
+.BR 2d .
+.SH FIREWALL BACKENDS
+.TP
+.B nft
+Owns only
+.BR "table inet minsec" .
+It creates local ban sets
+.BR ban4 / ban6 ,
+allow sets
+.BR allow4 / allow6 ,
+crowd-feed sets
+.BR crowd4 / crowd6 ,
+and input and forward base chains at priority \-10.
+Allow rules precede drop rules.
+The daemon requires permission to execute
+.BR nft (8)
+and administer nftables, normally
+.BR CAP_NET_ADMIN .
+.TP
+.B null
+Performs no firewall changes and is useful for evaluation and filter tuning.
+.TP
+.B exec
+Runs the shell command configured by
+.B defaults.exec_command
+with one of these argument sequences:
+.nf
+
+setup
+ban net ttl-seconds
+unban net
+.fi
+.PP
+The configured string is evaluated by
+.BR /bin/sh " " \-c .
+It must be trusted configuration.
+This backend does not enumerate active bans or install an allow set; the daemon
+still refuses to issue a ban for a network overlapping its allow list.
+.SH CONTROL SOCKET
+Online commands use the socket configured by
+.BR paths.socket .
+The protocol is newline-delimited JSON: one request and one response per line.
+Supported request command names include
+.BR ping ,
+.BR status ,
+.BR list ,
+.BR filters ,
+.BR ban ,
+and
+.BR unban .
+Use the CLI or
+.B minsec inspect --json
+instead of depending on human-readable output.
+.SH ENVIRONMENT
+.TP
+.B MINSEC_LOG
+Logging filter for daemon mode.
+The default is
+.BR info .
+Values use the
+.B tracing-subscriber
+environment-filter syntax; for example,
+.B minsec=debug
+enables debug logging for minsec targets.
+.SH FILES
+.TP
+.I /etc/minsec/minsec.toml
+Main daemon configuration.
+.TP
+.I /etc/minsec/conf.d/*.toml
+Lexically ordered configuration drop-ins.
+.TP
+.I /etc/minsec/filters/*.toml
+Custom filters and overrides for embedded filters.
+.TP
+.I /run/minsec/minsec.sock
+Default control socket.
+.TP
+.I /var/lib/minsec/events.jsonl
+Persistent event log.
+.TP
+.I /usr/lib/systemd/system/minsec.service
+Packaged systemd service unit.
+.SH EXIT STATUS
+Returns 0 when the requested operation succeeds and 1 for configuration,
+filter, control-socket, backend, or other operational errors.
+.SH EXAMPLES
+Validate all known filters before restarting the daemon:
+.PP
+.nf
+minsec check --all
+systemctl restart minsec
+.fi
+.PP
+Test the sshd filter without changing the firewall:
+.PP
+.nf
+minsec test sshd /var/log/secure
+.fi
+.PP
+Observe the full effective configuration:
+.PP
+.nf
+minsec --json inspect
+.fi
+.PP
+Create a one-day manual ban:
+.PP
+.nf
+minsec ban 198.51.100.7 --ttl 1d
+.fi
+.SH SEE ALSO
+.BR minsec.toml (5),
+.BR minsec-filter.toml (5),
+.BR minsec-sync (1),
+.BR minsec-sync.toml (5),
+.BR nft (8),
+.BR systemd.service (5)

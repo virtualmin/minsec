@@ -7,7 +7,7 @@ version = "0.1.4"
 edition = "2021"
 rust-version = "1.85"
 license = "GPL-3.0-or-later"
-repository = "https://github.com/virtualmin/minsec"
+repository = "https://github.com/minsecio/minsec"
 
 [workspace.dependencies]
 anyhow = "1"
