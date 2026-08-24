@@ -255,22 +255,21 @@ fn toml_files(directory: &Path) -> Vec<PathBuf> {
 fn all_filter_names(cfg: &Config, files: &InspectionFiles) -> BTreeSet<String> {
     let mut names: BTreeSet<String> = builtin::names().map(String::from).collect();
     names.extend(cfg.filters.keys().cloned());
-    names.extend(files.custom_filters.iter().filter_map(|path| {
-        path.file_stem()
-            .and_then(|stem| stem.to_str())
-            .map(String::from)
-    }));
+    names.extend(
+        files
+            .custom_filters
+            .iter()
+            .filter_map(|path| path.file_stem().and_then(|stem| stem.to_str()).map(String::from)),
+    );
     names
 }
 
 fn raw_filter_def(name: &str, custom_path: &Path, custom: bool) -> anyhow::Result<FilterDef> {
     if custom {
         let source = std::fs::read_to_string(custom_path)?;
-        return FilterDef::from_toml(&source)
-            .map_err(|error| anyhow::anyhow!("{}: {error}", custom_path.display()));
+        return FilterDef::from_toml(&source).map_err(|error| anyhow::anyhow!("{}: {error}", custom_path.display()));
     }
-    builtin::get(name)
-        .ok_or_else(|| anyhow::anyhow!("unknown filter `{name}`"))?
+    builtin::get(name).ok_or_else(|| anyhow::anyhow!("unknown filter `{name}`"))?
 }
 
 #[cfg(test)]
@@ -279,10 +278,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn temp_config() -> PathBuf {
-        let unique = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
+        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
         let directory = std::env::temp_dir().join(format!("minsec-inspection-{}-{unique}", std::process::id()));
         std::fs::create_dir_all(directory.join("conf.d")).unwrap();
         std::fs::create_dir_all(directory.join("filters")).unwrap();
@@ -316,7 +312,10 @@ patterns = ["failed from <HOST>"]
         assert_eq!(inspection.schema_version, 1);
         assert_eq!(inspection.effective.defaults.bantime_seconds, 7200);
         assert_eq!(inspection.effective.defaults.maxretry, 7);
-        assert!(inspection.filters.iter().any(|filter| filter.name == "custom" && !filter.enabled));
+        assert!(inspection
+            .filters
+            .iter()
+            .any(|filter| filter.name == "custom" && !filter.enabled));
         assert_eq!(inspection.files.dropins.len(), 1);
         assert_eq!(inspection.files.custom_filters.len(), 1);
         std::fs::remove_dir_all(directory).unwrap();

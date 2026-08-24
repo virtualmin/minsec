@@ -123,33 +123,31 @@ fn run() -> anyhow::Result<()> {
                 anyhow::bail!("configuration check failed")
             }
         }
-        Cmd::Inspect => {
-            match minsec_core::inspection::inspect(&cli.config_dir, env!("CARGO_PKG_VERSION")) {
-                Ok(inspection) => {
-                    if cli.json {
-                        println!("{}", serde_json::to_string(&inspection)?);
-                    } else {
-                        println!("minsec {} schema {}", inspection.version, inspection.schema_version);
-                        println!("config: {}", inspection.paths.config_dir.display());
-                        println!("filters: {}", inspection.filters.len());
-                    }
-                    Ok(())
+        Cmd::Inspect => match minsec_core::inspection::inspect(&cli.config_dir, env!("CARGO_PKG_VERSION")) {
+            Ok(inspection) => {
+                if cli.json {
+                    println!("{}", serde_json::to_string(&inspection)?);
+                } else {
+                    println!("minsec {} schema {}", inspection.version, inspection.schema_version);
+                    println!("config: {}", inspection.paths.config_dir.display());
+                    println!("filters: {}", inspection.filters.len());
                 }
-                Err(error) => {
-                    if cli.json {
-                        println!(
-                            "{}",
-                            serde_json::json!({
-                                "schema_version": minsec_core::inspection::SCHEMA_VERSION,
-                                "ok": false,
-                                "error": format!("{error:#}"),
-                            })
-                        );
-                    }
-                    Err(error)
-                }
+                Ok(())
             }
-        }
+            Err(error) => {
+                if cli.json {
+                    println!(
+                        "{}",
+                        serde_json::json!({
+                            "schema_version": minsec_core::inspection::SCHEMA_VERSION,
+                            "ok": false,
+                            "error": format!("{error:#}"),
+                        })
+                    );
+                }
+                Err(error)
+            }
+        },
         Cmd::Test { filter, file, quiet } => {
             let cfg = Config::load_dir(&cli.config_dir).unwrap_or_default();
             let def = cfg.filter_def(&filter)?;

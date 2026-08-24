@@ -11,8 +11,8 @@ pub mod duration;
 pub mod engine;
 pub mod events;
 pub mod filter;
-pub mod ip;
 pub mod inspection;
+pub mod ip;
 pub mod source;
 pub mod tracker;
 

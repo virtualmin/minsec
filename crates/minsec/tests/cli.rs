@@ -4,10 +4,7 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 fn temp_config() -> PathBuf {
-    let unique = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
+    let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
     let directory = std::env::temp_dir().join(format!("minsec-cli-{}-{unique}", std::process::id()));
     std::fs::create_dir_all(directory.join("conf.d")).unwrap();
     std::fs::create_dir_all(directory.join("filters")).unwrap();
