@@ -16,10 +16,10 @@
     "pubkey_b64": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=",
     "host_id": "018f3c00-0000-7000-8000-000000000001",
     "timestamp": 1724371260,
-    "body": "{\"seq\":42,\"agent_version\":\"minsec-sync/0.1.0\",\"reports\":[{\"ts\":1724371190,\"ip\":\"203.0.113.7/32\",\"filter\":\"sshd\",\"count\":5,\"ban_ttl\":3600},{\"ts\":1724371195,\"ip\":\"2001:db8:1:2::/64\",\"filter\":\"postfix-sasl\",\"count\":3,\"ban_ttl\":7200}]}",
-    "body_sha256_hex": "fef22f1311aaf8cf52170a5c196f533a898b0ebaefa49cd5cdfbf672939a2e1f",
-    "canonical": "minsec-report-v1\n018f3c00-0000-7000-8000-000000000001\n1724371260\nfef22f1311aaf8cf52170a5c196f533a898b0ebaefa49cd5cdfbf672939a2e1f",
-    "signature_b64": "x5yFOAnU6WZ/hRNh/o4i5kLzUezmm/AzNnc7I4rpNvaxsKSLa5AK8BhdLo6xgIP0f3JYMUXA/sIsY+IPflGYAg=="
+    "body": "{\"seq\":42,\"agent_version\":\"minsec-sync/0.1.0\",\"reports\":[{\"ts\":1724371190,\"ip\":\"203.0.113.7/32\",\"filter\":\"sshd\",\"count\":5,\"ban_ttl\":3600,\"escalation\":0},{\"ts\":1724371195,\"ip\":\"2001:db8:1:2::/64\",\"filter\":\"postfix-sasl\",\"count\":3,\"ban_ttl\":7200,\"escalation\":2}]}",
+    "body_sha256_hex": "47ca025eb92d2bc002cd6edd2b38d860532100481fb8ceb124e050727af9c72c",
+    "canonical": "minsec-report-v1\n018f3c00-0000-7000-8000-000000000001\n1724371260\n47ca025eb92d2bc002cd6edd2b38d860532100481fb8ceb124e050727af9c72c",
+    "signature_b64": "twMOQ896JoAaYXVjTfa6DEcF592hdJEVIKr/Yc+5enffLGc92o0ma/L7tkPVUB2IMeRdSPGAifNfFfbBurJdDg=="
   },
   {
     "name": "second-key-whitespace-body",

@@ -339,18 +339,13 @@ fn full_cycle_against_mock_backend() {
     // wholesale rather than left to age out of the kernel. Backdating
     // last_full is the only way to reach this without waiting hours.
     let state_file = dir.join("state").join("state.json");
-    let mut saved: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(&state_file).unwrap()).unwrap();
-    saved["feeds"]["basic/v4"]["last_full"] =
-        serde_json::json!(now() - 13 * 60 * 60);
+    let mut saved: serde_json::Value = serde_json::from_slice(&std::fs::read(&state_file).unwrap()).unwrap();
+    saved["feeds"]["basic/v4"]["last_full"] = serde_json::json!(now() - 13 * 60 * 60);
     std::fs::write(&state_file, serde_json::to_vec(&saved).unwrap()).unwrap();
 
     let (ok, stdout, stderr) = sync(&["pull", "--dry-run"], &config);
     assert!(ok, "refresh pull failed: {stderr}");
-    assert!(
-        stdout.contains("feed v4: full update (timeout refresh)"),
-        "{stdout}"
-    );
+    assert!(stdout.contains("feed v4: full update (timeout refresh)"), "{stdout}");
     assert!(stdout.contains("flush set inet minsec crowd4"), "{stdout}");
     assert!(stdout.contains("timeout 24h"), "{stdout}");
 
