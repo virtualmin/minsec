@@ -102,6 +102,8 @@ fn vector_body_matches_types() {
     assert_eq!(batch.reports.len(), 2);
     assert_eq!(batch.reports[0].ip, "203.0.113.7/32");
     assert_eq!(batch.reports[1].filter, "postfix-sasl");
+    assert_eq!(batch.reports[0].escalation, 0);
+    assert_eq!(batch.reports[1].escalation, 2);
     // Re-serialization is byte-identical: field order and names match.
     assert_eq!(serde_json::to_string(&batch).unwrap(), v.body);
 }

@@ -131,12 +131,33 @@ fn run(cli: Cli) -> anyhow::Result<()> {
                 Some(c) => println!("cursor:  inode {} offset {}", c.ino, c.offset),
                 None => println!("cursor:  (events log not read yet)"),
             }
+            match state.last_pull_ok {
+                0 => println!("pulled:  (never)"),
+                t => println!("pulled:  {} ago", fmt_age(client::now_unix().saturating_sub(t))),
+            }
             for (name, f) in &state.feeds {
-                println!("feed {name}: snapshot {} etag {}", f.snapshot, f.etag);
+                let age = client::now_unix().saturating_sub(f.last_full);
+                println!(
+                    "feed {name}: snapshot {} etag {} (full replace {} ago; entries expire {} after one)",
+                    f.snapshot,
+                    f.etag,
+                    fmt_age(age),
+                    nft::CROWD_TIMEOUT
+                );
             }
         }
     }
     Ok(())
+}
+
+/// Coarse "3h" / "2d" for status output; exactness is not the point.
+fn fmt_age(secs: u64) -> String {
+    match secs {
+        s if s < 90 => format!("{s}s"),
+        s if s < 90 * 60 => format!("{}m", s / 60),
+        s if s < 48 * 3600 => format!("{}h", s / 3600),
+        s => format!("{}d", s / 86400),
+    }
 }
 
 fn print_pull(o: &pull::Outcome) {
@@ -148,8 +169,9 @@ fn print_pull(o: &pull::Outcome) {
             } else {
                 String::new()
             };
+            let why = if o.refresh { " (timeout refresh)" } else { "" };
             println!(
-                "feed v{}: {} update, {} entries{invalid}",
+                "feed v{}: {} update{why}, {} entries{invalid}",
                 o.family, o.action, o.entries
             );
         }

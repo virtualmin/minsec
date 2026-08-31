@@ -18,11 +18,11 @@ constraints fail2ban does not meet:
 * **Simple to operate.** One TOML file plus drop-ins, built-in filters for the
   services Virtualmin installs, `minsec enable sshd`, `minsec test sshd
   /var/log/secure` to see exactly what would match, and a JSON control socket
-  so UIs never scrape output.
+  so UIs don't have to scrape CLI output.
 
 "Multiplayer mode" — opt-in crowd-sourced abuse reporting and a curated
 blocklist feed — lives in the separate `minsec-sync` helper so the resident
-daemon never carries a TLS stack: it reports automatic bans (attacker network
+daemon is minimalist and auditable; it reports automatic bans (attacker network
 and abuse category only) and pulls the crowd blocklist into dedicated
 `crowd4`/`crowd6` nftables sets. See [docs/MULTIPLAYER.md](docs/MULTIPLAYER.md)
 to opt in, and [docs/PLAN.md](docs/PLAN.md) for the full design and roadmap.

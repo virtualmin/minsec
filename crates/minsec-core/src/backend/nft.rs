@@ -16,6 +16,10 @@ use std::time::Duration;
 
 pub const TABLE: &str = "inet minsec";
 
+/// How long a crowd-blocklist element survives in the kernel without being
+/// refreshed by a pull. See the crowd sets in `setup_script`.
+pub const CROWD_TIMEOUT: &str = "24h";
+
 pub struct Nft {
     nft: String,
 }
@@ -76,11 +80,20 @@ impl Nft {
         // mode); empty and free until the user opts in. The daemon owns the
         // sets and rules so that flushing its chains on startup cannot strip
         // crowd filtering.
+        //
+        // The element timeout is a dead-man's switch. Crowd entries expire
+        // server-side and normally leave as removals in the next delta, so
+        // nothing in the feed protocol bounds how long an entry lives here.
+        // If minsec-sync stops running the kernel must still let the list
+        // decay rather than enforce a frozen blocklist forever; minsec-sync
+        // refreshes the timeout well inside the window. This definition and
+        // minsec-sync's must agree exactly, because whichever process runs
+        // first creates the sets.
         s.push_str(&format!(
-            "add set {TABLE} crowd4 {{ type ipv4_addr; flags interval; }}\n"
+            "add set {TABLE} crowd4 {{ type ipv4_addr; flags interval, timeout; timeout {CROWD_TIMEOUT}; }}\n"
         ));
         s.push_str(&format!(
-            "add set {TABLE} crowd6 {{ type ipv6_addr; flags interval; }}\n"
+            "add set {TABLE} crowd6 {{ type ipv6_addr; flags interval, timeout; timeout {CROWD_TIMEOUT}; }}\n"
         ));
         for hook in ["input", "forward"] {
             s.push_str(&format!(

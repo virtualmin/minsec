@@ -22,6 +22,12 @@ pub struct FeedCursor {
     pub etag: String,
     #[serde(default)]
     pub snapshot: i64,
+    /// Unix time of the last full replace of this family's set. A full
+    /// replace re-adds every element, refreshing the kernel timeout that
+    /// bounds how long a crowd list survives without a sync; `pull` forces
+    /// one when this gets old. Zero means "never", which forces one.
+    #[serde(default)]
+    pub last_full: u64,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -39,6 +45,11 @@ pub struct State {
     pub feeds: BTreeMap<String, FeedCursor>,
     #[serde(default)]
     pub min_report_interval: u64,
+    /// Unix time of the last pull that reached the server, including one
+    /// answered `304 Not Modified`. Reported by `status` so a sync that has
+    /// quietly stopped is visible rather than inferred.
+    #[serde(default)]
+    pub last_pull_ok: u64,
 }
 
 pub struct Store {
@@ -143,12 +154,14 @@ mod tests {
             FeedCursor {
                 etag: "\"s1\"".into(),
                 snapshot: 1,
+                last_full: 1_700_000_000,
             },
         );
         store.save_state(&st).unwrap();
         let back = store.load_state().unwrap();
         assert_eq!(back.host_id.as_deref(), Some("abc"));
         assert_eq!(back.feeds["basic/v4"].snapshot, 1);
+        assert_eq!(back.feeds["basic/v4"].last_full, 1_700_000_000);
 
         let k1 = store.load_or_create_key().unwrap();
         let k2 = store.load_or_create_key().unwrap();

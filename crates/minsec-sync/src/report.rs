@@ -73,7 +73,7 @@ fn to_report(ev: &BanEvent, now: u64) -> Option<Report> {
         filter: ev.filter.clone(),
         count: ev.hits.max(1) as i64,
         ban_ttl: ev.ttl as i64,
-        // Clamped to what the server accepts; the ladder never gets near
+        // Restricted to what the server accepts; the escalation never gets near
         // this in practice, but a corrupt events line must not fail a batch.
         escalation: ev.escalation.min(255),
     })
@@ -177,14 +177,13 @@ mod tests {
         assert_eq!(to_report(&ev, now).unwrap().escalation, 255);
     }
 
-    /// A zero escalation must not appear on the wire: batches from hosts
-    /// that see no repeat offenders stay byte-identical to the old format.
+    /// Escalation is always on the wire, including the common zero case.
     #[test]
-    fn zero_escalation_is_omitted() {
+    fn escalation_is_always_serialized() {
         let now = 1_000_000_000;
         let r = to_report(&ban(now, "203.0.113.7/32", "sshd"), now).unwrap();
         let json = serde_json::to_string(&r).unwrap();
-        assert!(!json.contains("escalation"), "{json}");
+        assert!(json.contains(r#""escalation":0"#), "{json}");
 
         let mut ev = ban(now, "203.0.113.7/32", "sshd");
         ev.escalation = 2;

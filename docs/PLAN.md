@@ -217,7 +217,7 @@ interactively. `minsec ban` refuses the client's own address without `--force`.
 - Report schema (`minsec-proto`): `{ts, ip, filter, count, ban_ttl, host_id(anon), version}`; no log lines, no usernames by default (privacy + GDPR posture: IP + category only, explicit opt-in, documented retention).
 - `minsec-sync report` reads the events cursor, batches, signs with a per-install key (Ed25519, generated at first run), POSTs.
 - `minsec-sync pull` fetches a delta feed (plain text / compact binary, ETag), writes it into dedicated sets `crowd4`/`crowd6` (separate from local bans so users can disable or audit it), and optionally only for "high-confidence" tiers — the free/paid split lives here.
-- Abuse-resistance of the feed is a server-side problem (reporter reputation, quorum across N independent reporters, allowlists of major providers) and a separate repo; noting it so the report schema carries what that needs (host_id, version, filter).
+- Abuse-resistance of the feed is a server-side problem (reporter reputation, quorum across N independent reporters, allowlists of major providers) and a separate repo; noting it so the report schema includes what that needs (host_id, version, filter).
 - WAF / reputation lookups / per-request decisions are **not** in the daemon; they'd be an nginx/apache module or a separate service consuming the same sets.
 
 ---
@@ -264,7 +264,7 @@ The crowd backend now maps each reported filter name through a signature
 registry to an abuse category (`mail-auth`, `mail-mx`, `web-auth`,
 `web-exploit`, `infra`), and publishes the result as a categorised DNSBL for
 mail filtering as well as the existing firewall feed. That machinery is
-entirely server-side — the wire format still carries only an address, a rule
+entirely server-side — the wire format still has only an address, a rule
 name, and counters. What it asks of the agent:
 
 - **Exploit-probe filters.** The filter engine already matches on full

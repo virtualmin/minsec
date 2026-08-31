@@ -74,6 +74,20 @@ Full feeds atomically replace the corresponding set; delta feeds add and remove
 individual entries.
 If a delta cannot be applied, a full feed is fetched and installed.
 .PP
+Crowd set elements are given a 24 hour kernel timeout.
+A full replace re-adds every element and so restarts that clock, and
+.B pull
+forces one, unconditionally, whenever the last full replace for a family is
+more than 12 hours old.
+Under normal operation the list is therefore refreshed long before anything
+expires; if pulls stop reaching the server, the crowd sets drain within a day
+instead of enforcing their last snapshot until the machine reboots.
+Local bans in
+.B ban4
+and
+.B ban6
+are unaffected.
+.PP
 This command manages only
 .B crowd4
 and
@@ -94,15 +108,23 @@ This absent-file behavior is specific to
 the other commands report an error.
 .SS status
 Print the configured server, public key, enrollment host ID, next report
-sequence number, event-log cursor, and saved feed state.
+sequence number, event-log cursor, the age of the last pull that reached the
+server, and saved feed state including how long ago each family was last
+replaced in full.
 A private key is generated if one does not already exist.
 .SH OPERATION
 The packaged
 .B minsec-sync.timer
 runs
 .B minsec-sync run
-approximately every five minutes: two minutes after boot, then five minutes
-after each run, with up to a minute of randomized delay.
+approximately once an hour: two minutes after boot, then an hour after each
+run, with up to five minutes of randomized delay.
+The free feed is refreshed on that cadence and is not intended to be
+real-time; a site that wants faster propagation can shorten
+.B OnUnitActiveSec
+with a drop-in, subject to the
+.B min_report_interval
+advertised at enrollment.
 The service normally runs as the same
 .B minsec
 user as the daemon so it can read the event log and persistent state.

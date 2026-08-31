@@ -2,8 +2,8 @@
 //! `events.jsonl`, resuming from a byte cursor and following the daemon's
 //! single-file rotation (`events.jsonl` → `events.jsonl.1`).
 //!
-//! Events are parsed loosely (unknown fields and kinds ignored) so the two
-//! binaries can be upgraded independently.
+//! Unknown fields and event kinds are ignored so a newer daemon can write
+//! alongside an older sync binary; known fields are all required.
 
 use crate::state::Cursor;
 use serde::Deserialize;
@@ -18,9 +18,7 @@ pub struct BanEvent {
     pub filter: String,
     pub ttl: u64,
     pub hits: u32,
-    #[serde(default)]
     pub escalation: u32,
-    #[serde(default)]
     pub manual: bool,
 }
 

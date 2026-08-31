@@ -14,14 +14,8 @@ pub struct Report {
     pub ban_ttl: i64,
     /// Repeat-offender depth from the daemon's escalation ladder: 0 on a
     /// first ban, incrementing each time the address is re-banned inside
-    /// the escalation memory. Omitted when 0 so batches from hosts that
-    /// see no repeats stay byte-identical to the pre-0.1.6 format.
-    #[serde(default, skip_serializing_if = "is_zero")]
+    /// the escalation memory.
     pub escalation: u32,
-}
-
-fn is_zero(n: &u32) -> bool {
-    *n == 0
 }
 
 /// Body of `POST /v1/reports`. `seq` must strictly increase per agent.

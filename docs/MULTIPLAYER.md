@@ -6,7 +6,7 @@ built from what every participating system is seeing — attackers blocked
 *before* they reach your login prompts.
 
 It is **opt-in**, handled entirely by the small `minsec-sync` binary (the
-resident daemon carries no TLS or HTTP stack), and designed so you can
+minimalist resident daemon has no TLS or HTTP stack), and designed so you can
 audit exactly what leaves the machine.
 
 ## What is sent
@@ -40,8 +40,11 @@ sudo systemctl enable --now minsec-sync.timer
 ```
 
 The config file's presence is the switch: the timer runs `minsec-sync run`
-every 5 minutes, which enrolls automatically on the first run (solving a
-small proof-of-work), then reports new bans and refreshes the blocklist.
+hourly, which enrolls automatically on the first run (solving a small
+proof-of-work), then reports new bans and refreshes the blocklist. Hourly is
+the free tier's cadence; the crowd list is a slow-moving reputation feed, not
+a real-time signal, and local filters catch an attacker on your own machine
+long before the crowd hears about it.
 Remove the file to opt out; `nft flush set inet minsec crowd4` (and
 `crowd6`) clears the pulled list immediately.
 
@@ -71,6 +74,19 @@ minsec-sync pull --dry-run  # print the nft script instead of applying it
 minsec-sync run             # report + pull; what the timer runs
 minsec-sync status          # enrollment, cursor, and feed state
 ```
+
+## The crowd list expires on its own
+
+Crowd entries are added with a 24-hour kernel timeout, and every pull that
+finds the last full replace more than 12 hours old fetches the whole list and
+rewrites the set, restarting the clock. So a working sync never lets anything
+expire, and a sync that stops — dead network, backend outage, a timer someone
+disabled — drains the crowd sets within a day rather than enforcing a frozen
+snapshot indefinitely. `minsec-sync status` shows the age of the last
+successful pull and of each set's last full replace.
+
+Your own `ban4`/`ban6` entries are untouched by any of this; they carry the
+TTLs the daemon gave them.
 
 State (key, host id, events-log cursor, feed cursors) lives in
 `/var/lib/minsec/sync/`.

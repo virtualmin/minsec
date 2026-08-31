@@ -15,6 +15,23 @@ use std::process::{Command, Stdio};
 
 pub const TABLE: &str = "inet minsec";
 
+/// How long a crowd element survives in the kernel without a refresh. Crowd
+/// entries have no TTL of their own — expiry arrives as removals in a later
+/// delta — so without this a sync that stops running (network, backend
+/// outage, a disabled timer) would leave its last snapshot enforced until
+/// the machine reboots. The kernel ages the list out instead.
+///
+/// Must match minsec-core's crowd set definition exactly: whichever process
+/// creates the sets first wins, and `add set` on an existing set with a
+/// different definition fails.
+pub const CROWD_TIMEOUT: &str = "24h";
+
+/// Refresh deadline: a full replace re-adds every live element with a fresh
+/// timeout, so one is forced whenever the last is this old. Comfortably
+/// inside `CROWD_TIMEOUT` so a couple of missed runs cannot expire a list
+/// that is still being synced.
+pub const FULL_REFRESH_SECS: u64 = 12 * 60 * 60;
+
 pub struct Nft {
     bin: String,
     dry_run: bool,
@@ -78,10 +95,10 @@ impl Nft {
     pub fn ensure_sets(&self) -> anyhow::Result<()> {
         let mut s = format!("add table {TABLE}\n");
         s.push_str(&format!(
-            "add set {TABLE} crowd4 {{ type ipv4_addr; flags interval; }}\n"
+            "add set {TABLE} crowd4 {{ type ipv4_addr; flags interval, timeout; timeout {CROWD_TIMEOUT}; }}\n"
         ));
         s.push_str(&format!(
-            "add set {TABLE} crowd6 {{ type ipv6_addr; flags interval; }}\n"
+            "add set {TABLE} crowd6 {{ type ipv6_addr; flags interval, timeout; timeout {CROWD_TIMEOUT}; }}\n"
         ));
         self.run(&s)
     }
